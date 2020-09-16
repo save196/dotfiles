@@ -1,0 +1,9 @@
+#!/bin/bash
+
+BT_STATUS='on'
+
+rfkill list | grep hci0 && rfkill block bluetooth && BT_STATUS='off' || rfkill unblock bluetooth
+
+notify-send.py " Bluetooth $BT_STATUS" -t 4000 \
+                         --hint string:image-path:video-display boolean:transient:true \
+                         --replaces-process "brightness-popup" &

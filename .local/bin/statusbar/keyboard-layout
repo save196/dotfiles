@@ -1,0 +1,3 @@
+#!/bin/bash
+
+setxkbmap -query | grep "layout:" | awk 'NF>1{print toupper(" "$NF)}'

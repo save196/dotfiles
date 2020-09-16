@@ -1,0 +1,6 @@
+#!/bin/sh
+
+mem=$(free -h | awk '/^Mem:/ {printf $2" "$3}')
+mem=$(echo $mem | grep 'G$' > /dev/null && echo $mem | awk '{printf $2*100/$1}' || echo $mem | awk '{printf $2/10/$1}')
+printf " %.1f%%\n" $mem
+

@@ -1,0 +1,3 @@
+#!/bin/bash
+
+synclient -l | grep "TouchpadOff             = 0" > /dev/null && synclient TouchpadOff=1 || synclient TouchpadOff=0

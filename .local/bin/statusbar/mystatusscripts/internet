@@ -1,0 +1,7 @@
+#!/bin/sh
+
+[ "$(cat /sys/class/net/w*/operstate)" = 'down' ] && wifiicon="📡"
+
+[ ! -n "${wifiicon+var}" ] && wifiicon=$(grep "^\s*w" /proc/net/wireless | awk '{ print int($3 * 100 / 70) "%" }') && ssid=$(iw dev wlo1 link | grep "SSID" | awk '{ print "", $2 $3 }') && wifiicon=$ssid' '$wifiicon
+
+printf "%s %s\n" "$wifiicon" "$(cat /sys/class/net/e*/operstate 2>/dev/null | sed "s/down//;s/up/ /")"

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+[ -z "$1" ] && gnome-screenshot && exit
+
+import "$HOME$(date +'/Pictures/Screenshot from %Y-%m-%d %H-%M-%S.png')"
