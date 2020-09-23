@@ -38,7 +38,6 @@ set clipboard+=unnamedplus
 	set nocompatible
 	filetype plugin on
 	syntax on
-	colorscheme default
 	set encoding=utf-8
 	set number relativenumber
 	set linebreak
@@ -130,11 +129,10 @@ set clipboard+=unnamedplus
 " endif
 
 set termguicolors
-let g:gruvbox_contrast_dark='soft'
 set bg=dark
-let g:gruvbox_transparent_bg=1
 let g:gruvbox_italic=1
 colorscheme gruvbox
+hi Normal guibg=NONE ctermbg=NONE
 
 " Neomake
 "let g:neomake_makeclean_maker = { 'exe': 'make', 'args': ['clean'] }
