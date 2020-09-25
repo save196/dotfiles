@@ -160,7 +160,7 @@ def print_status(config: Configuration):
         icon=""
     elif(config.status==Status.PASSIVE):
         icon=""
-        print(f"{icon} 100% ")
+        print(f"{icon} 100%")
         return
     elif(config.percentage>=0.90):
         icon=""
