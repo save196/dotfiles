@@ -98,8 +98,6 @@ source $ZSH/oh-my-zsh.sh
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias vim="nvim"
 
-#[ -f /etc/zprofile ] && . /etc/zprofile
-#[ -f ~/.zprofile ] && . ~/.zprofile
 source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh 2>/dev/null
 prompt_context(){}
 export LESSOPEN="| /usr/share/source-highlight/src-hilite-lesspipe.sh %s"
