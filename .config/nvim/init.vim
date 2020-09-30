@@ -26,6 +26,7 @@ Plug 'tpope/vim-fugitive'
 Plug 'morhetz/gruvbox'
 Plug 'tommcdo/vim-fugitive-blame-ext'
 Plug 'mfukar/robotframework-vim'
+Plug 'neomutt/neomutt.vim'
 call plug#end()
 
 set go=a
@@ -41,6 +42,11 @@ set clipboard+=unnamedplus
 	set encoding=utf-8
 	set number relativenumber
 	set linebreak
+        set termguicolors
+        set bg=dark
+        let g:gruvbox_italic=1
+        colorscheme gruvbox
+        hi Normal guibg=NONE ctermbg=NONE
         set hlsearch
 	set tabstop=8 softtabstop=0 expandtab shiftwidth=4 smarttab
 " Enable autocompletion:
@@ -107,12 +113,6 @@ set clipboard+=unnamedplus
 " Save file as sudo on files that require root permission
 	cnoremap w!! execute 'silent! write !sudo tee % >/dev/null' <bar> edit!
 
-" Enable Goyo by default for mutt writting
-	autocmd BufRead,BufNewFile /tmp/neomutt* let g:goyo_width=80
-	autocmd BufRead,BufNewFile /tmp/neomutt* :Goyo | set bg=light
-	autocmd BufRead,BufNewFile /tmp/neomutt* map ZZ :Goyo\|x!<CR>
-	autocmd BufRead,BufNewFile /tmp/neomutt* map ZQ :Goyo\|q!<CR>
-
 " Automatically deletes all trailing whitespace on save.
 	autocmd BufWritePre * %s/\s\+$//e
 
@@ -128,11 +128,6 @@ set clipboard+=unnamedplus
 "    highlight! link DiffText MatchParen
 " endif
 
-set termguicolors
-set bg=dark
-let g:gruvbox_italic=1
-colorscheme gruvbox
-hi Normal guibg=NONE ctermbg=NONE
 
 " Neomake
 "let g:neomake_makeclean_maker = { 'exe': 'make', 'args': ['clean'] }
