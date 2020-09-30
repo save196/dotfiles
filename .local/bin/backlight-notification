@@ -1,20 +1,14 @@
 #!/bin/bash
 
-
 if [ "$1" == "inc" ]; then
-    BRIGHTNESS=$(cbacklight --get --inc 5 | cut -f1 -d"." | cut -f2 -d" ")
+    xbacklight + 5
 fi
 
 if [ "$1" == "dec" ]; then
-    BRIGHTNESS=$(cat /sys/class/backlight/intel_backlight/brightness)
-    if [ $BRIGHTNESS -le 6000 ]; then
-        cbacklight --set 1
-        BRIGHTNESS="1"
-    else
-        BRIGHTNESS=$(cbacklight --get --dec 5 | cut -f1 -d"." | cut -f2 -d" ")
-    fi
+    xbacklight - 5
 fi
 
+BRIGHTNESS=$(xbacklight -get | cut -f1 -d".")
 notify-send.py " Backlight" "$BRIGHTNESS/100" -t 4000 \
                          --hint string:image-path:video-display boolean:transient:true \
                          --replaces-process "brightness-popup" &
