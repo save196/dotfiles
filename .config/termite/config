@@ -1,10 +1,10 @@
 [options]
-#allow_bold = false
+allow_bold = true
 #audible_bell = false
 #bold_is_bright = true
-#cell_height_scale = 1.0
-#cell_width_scale = 1.0
-#clickable_url = true
+#cell_height_scale = 1.9
+cell_width_scale = 1.2
+clickable_url = true
 #dynamic_title = true
 font = Inconsolata 11
 #fullscreen = true
@@ -35,7 +35,7 @@ cursor_blink = off
 #modify_other_keys = false
 
 # set size hints for the window
-#size_hints = false
+#size_hints = true
 
 # "off", "left" or "right"
 #scrollbar = off
@@ -44,7 +44,7 @@ cursor_blink = off
 # If both of these are unset, cursor falls back to the foreground color,
 # and cursor_foreground falls back to the background color.
 cursor = #add8e6
-cursor_foreground = #ebdbb2
+cursor_foreground = #555555
 
 foreground = #ebdbb2
 foreground_bold = #ebdbb2
