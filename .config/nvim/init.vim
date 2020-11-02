@@ -27,6 +27,10 @@ Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
 Plug 'ap/vim-css-color'
 Plug 'lambdalisue/fern.vim'
+Plug 'lambdalisue/nerdfont.vim'
+Plug 'lambdalisue/fern-renderer-nerdfont.vim'
+Plug 'lambdalisue/fern-git-status.vim'
+Plug 'lambdalisue/fern-hijack.vim'
 call plug#end()
 
 set go=a
@@ -163,19 +167,6 @@ let g:airline#extensions#tabline#buffer_nr_show = 1
 
 function! s:init_fern() abort
     setlocal norelativenumber nonumber
-    nmap <buffer> <Plug>(fern-my-leave-and-tcd)
-        \ <Plug>(fern-action-leave)
-        \ <Plug>(fern-wait)
-	\ <Plug>(fern-action-tcd:root)
-    nmap <buffer> <C-H> <Plug>(fern-my-leave-and-tcd)
-    nmap <buffer> <Plug>(fern-my-open-and-tcd)
-        \ <Plug>(fern-action-open-or-enter)
-        \ <Plug>(fern-wait)
-	\ <Plug>(fern-action-tcd:root)
-    nmap <buffer> <CR> <Plug>(fern-my-open-and-tcd)
-    nmap <buffer> <C-h> <C-w>h
-    nmap <buffer> <C-j> <C-w>j
-    nmap <buffer> <C-k> <C-w>k
     nmap <buffer> <C-l> <C-w>l
 endfunction
 
@@ -184,3 +175,4 @@ augroup my-fern
     autocmd FileType fern call s:init_fern()
 augroup END
 
+let g:fern#renderer = "nerdfont"
