@@ -9,17 +9,12 @@ endif
 
 call plug#begin('~/.config/nvim/plugged')
 Plug 'tpope/vim-surround'
-Plug 'scrooloose/nerdtree'
 Plug 'junegunn/goyo.vim'
-Plug 'PotatoesMaster/i3-vim-syntax'
-Plug 'jreybert/vimagit'
 Plug 'lukesmithxyz/vimling'
 Plug 'vimwiki/vimwiki'
-Plug 'bling/vim-airline'
 Plug 'tpope/vim-commentary'
 Plug 'kovetskiy/sxhkd-vim'
 Plug 'xolox/vim-misc'
-Plug 'xolox/vim-notes'
 Plug 'neomake/neomake'
 Plug 'pearofducks/ansible-vim'
 Plug 'tpope/vim-fugitive'
@@ -27,6 +22,11 @@ Plug 'morhetz/gruvbox'
 Plug 'tommcdo/vim-fugitive-blame-ext'
 Plug 'mfukar/robotframework-vim'
 Plug 'neomutt/neomutt.vim'
+Plug 'save196/toggle-terminal'
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
+Plug 'ap/vim-css-color'
+Plug 'lambdalisue/fern.vim'
 call plug#end()
 
 set go=a
@@ -36,6 +36,8 @@ set clipboard+=unnamedplus
 
 " Some basics:
 	nnoremap c "_c
+	nnoremap C "_C
+	nnoremap x "_x
 	set nocompatible
 	filetype plugin on
 	syntax on
@@ -46,6 +48,8 @@ set clipboard+=unnamedplus
         set bg=dark
         let g:gruvbox_italic=1
         colorscheme gruvbox
+        let g:airline_theme='base16_gruvbox_dark_hard'
+        let g:airline_powerline_fonts = 1
         hi Normal guibg=NONE ctermbg=NONE
         set hlsearch
 	set tabstop=8 softtabstop=0 expandtab shiftwidth=4 smarttab
@@ -63,9 +67,8 @@ set clipboard+=unnamedplus
 " Splits open at the bottom and right, which is non-retarded, unlike vim defaults.
 	set splitbelow splitright
 
-" Nerd tree
-	map <leader>n :NERDTreeToggle<CR>
-	autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+" Fern tree
+	map <leader>n :Fern . -drawer -toggle<CR>
 
 " vimling:
 	nm <leader>d :call ToggleDeadKeys()<CR>
@@ -148,4 +151,36 @@ hi VimwikiHeader3 guifg=#458588
 hi VimwikiHeader4 guifg=#B16286
 hi VimwikiHeader5 guifg=#689D6A
 hi VimwikiHeader6 guifg=#CC241D
+
+autocmd TermOpen * setlocal norelativenumber nonumber
+autocmd TermOpen * startinsert
+tnoremap <ESC>   <C-\><C-n>
+map <leader>t :ToggleTerminal<CR>
+autocmd bufenter * if (winnr("$") == 1 && bufwinnr(bufnr('ToggleTerminal')) != -1) | q | endif
+
+let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#tabline#buffer_nr_show = 1
+
+function! s:init_fern() abort
+    setlocal norelativenumber nonumber
+    nmap <buffer> <Plug>(fern-my-leave-and-tcd)
+        \ <Plug>(fern-action-leave)
+        \ <Plug>(fern-wait)
+	\ <Plug>(fern-action-tcd:root)
+    nmap <buffer> <C-H> <Plug>(fern-my-leave-and-tcd)
+    nmap <buffer> <Plug>(fern-my-open-and-tcd)
+        \ <Plug>(fern-action-open-or-enter)
+        \ <Plug>(fern-wait)
+	\ <Plug>(fern-action-tcd:root)
+    nmap <buffer> <CR> <Plug>(fern-my-open-and-tcd)
+    nmap <buffer> <C-h> <C-w>h
+    nmap <buffer> <C-j> <C-w>j
+    nmap <buffer> <C-k> <C-w>k
+    nmap <buffer> <C-l> <C-w>l
+endfunction
+
+augroup my-fern
+    autocmd! *
+    autocmd FileType fern call s:init_fern()
+augroup END
 
