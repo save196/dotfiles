@@ -4,6 +4,8 @@
 !! Set a default font and font size as below:
 *.font: monospace:pixelsize=15:antialias=true:autohint=true
 
+*.antialias: 1
+
 /* name		dark	light */
 /* black	0	8 */
 /* red		1	9 */

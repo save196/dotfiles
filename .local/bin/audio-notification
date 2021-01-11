@@ -1,8 +1,8 @@
 #!/bin/bash
 
-VOLUME=$(pactl list sinks | grep '^[[:space:]]Volume:' | tail -n 1 | sed -e 's,.* \([0-9][0-9]*\)%.*,\1,')
+VOLUME=$(get-volume)
 
-N_CHANNELS=$(pactl list sinks | grep '^[[:space:]]Mute:' | wc -l)
+#N_CHANNELS=$(pactl list sinks | grep '^[[:space:]]Mute:' | wc -l)
 
 if [ "$1" == "inc" ] && [ $VOLUME -lt 100 ]; then
     pactl set-sink-volume @DEFAULT_SINK@ +10%
@@ -14,18 +14,18 @@ fi
 
 if [ "$1" == "tog" ]; then
     pactl set-sink-mute @DEFAULT_SINK@ toggle
-    if [ $N_CHANNELS -gt 1 ]; then
-        pactl set-sink-mute 0 toggle
-    fi
+    #if [ $N_CHANNELS -gt 1 ]; then
+    #    pactl set-sink-mute 0 toggle
+    #fi
 fi
 
-VOLUME=$(pactl list sinks | grep '^[[:space:]]Volume:' | tail -n 1 | sed -e 's,.* \([0-9][0-9]*\)%.*,\1,')
+VOLUME=$(get-volume)
 
 if [ $VOLUME -gt 100 ]; then
     pactl set-sink-volume @DEFAULT_SINK@ 100%
 fi
 
-VOLUME=$(pactl list sinks | grep '^[[:space:]]Volume:' | tail -n 1 | sed -e 's,.* \([0-9][0-9]*\)%.*,\1,')
+VOLUME=$(get-volume)
 if [ "$1" == "inc" ] || [ "$1" == "dec" ]; then
     notify-send.py " Volume" "$VOLUME/100" -t 4000 \
         --hint string:image-path:video-display boolean:transient:true \

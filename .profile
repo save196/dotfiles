@@ -26,8 +26,12 @@ if [ -d "$HOME/.local/bin" ] ; then
     PATH="$HOME/.local/bin:$PATH"
 fi
 
-export PATH="$PATH:$HOME/.local/bin/statusbar"
+# set PATH so it includes user's private bin if it exists
+if [ -d "$HOME/.local/bin/statusbar" ] ; then
+    PATH="$HOME/.local/bin/statusbar:$PATH"
+fi
 
+export ZDOTDIR="$HOME/.config/zsh"
 export EDITOR='nvim'
 export TERMINAL="st"
 export BROWSER="brave-browser"

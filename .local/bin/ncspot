@@ -1,0 +1,18 @@
+#!/bin/bash
+
+st /usr/bin/ncspot &
+song=$(playerctl --player=ncspot metadata title 2>&1)
+while :; do
+	sleep 2
+	current_song=$(playerctl --player=ncspot metadata title 2>&1)
+	if [ "$current_song" == "No players found" ]; then
+		exit
+	fi
+	if [ "$song" != "$current_song" ] && [ "$current_song" != "" ]; then
+		song=$(playerctl --player=ncspot metadata title 2>&1)
+		author=$(playerctl --player=ncspot metadata artist 2>&1)
+		notify-send.py " $song" "$author" -t 5000 \
+                         --hint string:image-path:video-display boolean:transient:true \
+                         --replaces-process "spotify" &
+	fi
+done

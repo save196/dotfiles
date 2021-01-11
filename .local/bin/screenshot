@@ -1,8 +1,14 @@
 #!/bin/bash
 
+mkdir -p "$HOME/Pictures/Screenshots"
+
+IMG_NAME="$HOME$(date +'/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png')"
+
 if [ -z "$1" ]; then
-    import -window root "$HOME$(date +'/Pictures/Screenshot from %Y-%m-%d %H-%M-%S.png')"
+    import -window root "$IMG_NAME"
+    cat "$IMG_NAME" | xclip -selection clipboard -t image/png
     exit
 fi
 
-import "$HOME$(date +'/Pictures/Screenshot from %Y-%m-%d %H-%M-%S.png')"
+import "$IMG_NAME"
+cat "$IMG_NAME" | xclip -selection clipboard -t image/png

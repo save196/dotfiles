@@ -102,3 +102,6 @@ source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh 2>/dev/nul
 prompt_context(){}
 export LESSOPEN="| /usr/share/source-highlight/src-hilite-lesspipe.sh %s"
 export LESS=' -R '
+
+[ -f "$ZDOTDIR/.extra" ] && . "$ZDOTDIR/.extra"
+

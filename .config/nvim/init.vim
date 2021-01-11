@@ -157,13 +157,13 @@ hi VimwikiHeader5 guifg=#689D6A
 hi VimwikiHeader6 guifg=#CC241D
 
 autocmd TermOpen * setlocal norelativenumber nonumber
-autocmd TermOpen * startinsert
 tnoremap <ESC>   <C-\><C-n>
 map <leader>t :ToggleTerminal<CR>
-autocmd bufenter * if (winnr("$") == 1 && bufwinnr(bufnr('ToggleTerminal')) != -1) | q | endif
+autocmd bufenter * if (winnr("$") == 1 && bufwinnr(bufnr('term://')) != -1) | q | endif
 
 let g:airline#extensions#tabline#enabled = 1
 let g:airline#extensions#tabline#buffer_nr_show = 1
+let g:airline#extensions#tabline#formatter = 'unique_tail'
 
 function! s:init_fern() abort
     setlocal norelativenumber nonumber

@@ -1,7 +1,5 @@
 #!/bin/bash
 
-xss-lock --transfer-sleep-lock -- i3lock-custom --nofork &
-dwmblocks &
 while :; do
 	dwm || exit
 done

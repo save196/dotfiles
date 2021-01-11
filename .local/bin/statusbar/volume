@@ -1,8 +1,6 @@
 #!/bin/bash
 
-volstat=$(pactl list sinks)
-
-vol=$(echo "$volstat" | grep '^[[:space:]]Volume:' | tail -n 1 | sed -e 's,.* \([0-9][0-9]*\)%.*,\1,')
+vol=$(get-volume)
 
 if [ $vol -gt 70 ]; then
 	icon=" "
@@ -11,5 +9,6 @@ elif [ $vol -lt 30 ]; then
 else
 	icon=" "
 fi
-echo "$volstat" | grep '^[[:space:]]Mute:' | tail -n 1 | grep yes > /dev/null && icon="❗"
+SINK=$(pacmd list-sinks | grep "* index:" | sed -e 's,.* \([0-9]*\)$,\1,')
+pactl list sinks | grep '^[[:space:]]Mute:' | head -n $(( $SINK + 1 )) | tail -n 1 | grep yes > /dev/null && icon="❗"
 printf "%s%%\\n" "$icon""$vol"
