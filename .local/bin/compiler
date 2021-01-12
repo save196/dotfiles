@@ -8,9 +8,6 @@
 
 file=$(readlink -f "$1")
 dir=$(dirname "$file")
-[ "$dir" = "/home/etursav/Documents/thesis/thesis_latex/chapters" ] && \
-    file="/home/etursav/Documents/thesis/thesis_latex/thesis.tex" && \
-    dir=$(dirname "$file")
 base="${file%.*}"
 
 cd "$dir" || exit

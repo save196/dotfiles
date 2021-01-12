@@ -1,0 +1,13 @@
+#!/bin/bash
+
+OUT=$(printf "Shutdown\\nReboot\\nSuspend\\nHibernate" | dmenu -i -l 4)
+
+if [ "$OUT" == "Shutdown" ]; then
+    loginctl poweroff
+elif [ "$OUT" == "Reboot" ]; then
+    loginctl reboot
+elif [ "$OUT" == "Suspend" ]; then
+    loginctl suspend
+elif [ "$OUT" == "Hibernate" ]; then
+    loginctl hibernate
+fi

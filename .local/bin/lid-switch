@@ -1,0 +1,21 @@
+#!/bin/bash
+
+export DISPLAY=":0"
+
+devices=$(xrandr | grep " connected" | cut -d" " -f1)
+connected=$(echo "$devices" | wc -l)
+main=$(echo "$devices" | head -n1)
+
+if [ "$connected" -eq "1" ]; then
+    second=$(xrandr --listactivemonitors | tail -n +2 | grep -v "$main" | awk 'END {print $NF}')
+    [ -z "$second" ] || xrandr --output "$second" --auto --left-of "$main" && ~/.fehbg
+    [ "$1" == "open" ] && xrandr --output "$main" --auto && ~/.fehbg
+    [ "$1" == "close" ] && loginctl suspend
+else
+    second=$(echo "$devices" | tail -n1)
+    [ "$1" == "open" ] && dmenu_project Last primary
+    [ "$1" == "close" ] && xrandr --output "$main" --off --output "$second" --auto && ~/.fehbg
+fi
+
+xset r rate 300 50 &
+xrandr --dpi 125.37
