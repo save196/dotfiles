@@ -31,8 +31,7 @@ if [ -d "$HOME/.local/bin/statusbar" ] ; then
     PATH="$HOME/.local/bin/statusbar:$PATH"
 fi
 
-export ZDOTDIR="$HOME/.config/zsh"
-export EDITOR='nvim'
+export EDITOR="nvim"
 export TERMINAL="st"
 export BROWSER="brave-browser"
 export READER="zathura"

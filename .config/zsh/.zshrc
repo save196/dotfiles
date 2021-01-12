@@ -105,5 +105,7 @@ prompt_context(){}
 export LESSOPEN="| /usr/share/source-highlight/src-hilite-lesspipe.sh %s"
 export LESS=' -R '
 
-[ -f "$ZDOTDIR/.extra" ] && . "$ZDOTDIR/.extra"
+if [ -f "$ZDOTDIR/.extra" ]; then
+    . "$ZDOTDIR/.extra"
+fi
 
