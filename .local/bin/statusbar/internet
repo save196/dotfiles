@@ -1,9 +1,11 @@
 #!/bin/sh
 
+if [ -d /sys/class/net/w* ]; then
+    [ "$(cat /sys/class/net/w*/operstate)" = 'down' ] && wifiicon="📡"
 
+    [ ! -n "${wifiicon}" ] && interface=$(cat .wifi || iw dev | awk '$1=="Interface"{print $2}' > .wifi) && wifiicon=$(grep "^\s*w" /proc/net/wireless | awk '{ print int($3 * 100 / 70) "%" }') && ssid=$(iw dev $interface link | grep "SSID" | awk '{ print "", $2 $3 }') && wifiicon=$ssid' '$wifiicon
 
-[ "$(cat /sys/class/net/w*/operstate)" = 'down' ] && wifiicon="📡"
-
-[ ! -n "${wifiicon}" ] && interface=$(cat .wifi || iw dev | awk '$1=="Interface"{print $2}' > .wifi) && wifiicon=$(grep "^\s*w" /proc/net/wireless | awk '{ print int($3 * 100 / 70) "%" }') && ssid=$(iw dev $interface link | grep "SSID" | awk '{ print "", $2 $3 }') && wifiicon=$ssid' '$wifiicon
-
-printf "%s%s\n" "$wifiicon" "$(cat /sys/class/net/e*/operstate 2>/dev/null | sed "s/down//;s/up/ /")"
+    printf "%s%s\n" "$wifiicon" "$(cat /sys/class/net/e*/operstate 2>/dev/null | sed "s/down//;s/up/ /")"
+else
+    cat /sys/class/net/e*/operstate 2>/dev/null | sed "s/down//;s/up//"
+fi
