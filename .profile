@@ -31,7 +31,9 @@ if [ -d "$HOME/.local/bin/statusbar" ] ; then
     PATH="$HOME/.local/bin/statusbar:$PATH"
 fi
 
+export _JAVA_AWT_WM_NONREPARENTING=1
+export WINIT_X11_SCALE_FACTOR=1.0
 export EDITOR="nvim"
-export TERMINAL="st"
+export TERMINAL="alacritty"
 export BROWSER="brave-browser"
 export READER="zathura"
