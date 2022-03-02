@@ -52,7 +52,6 @@ set clipboard+=unnamedplus
         set termguicolors
         set bg=dark
         let g:gruvbox_italic=1
-        let g:hackthebox_terminal_italic=1
         colorscheme gruvbox
         let g:airline_theme='base16_gruvbox_dark_hard'
         let g:airline_powerline_fonts = 1

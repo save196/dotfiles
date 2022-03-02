@@ -298,11 +298,7 @@ colors:
   # Default colors
   # primary:
   #   background: '#1a2332'
-  #   foreground: '#a4b1cd'
-
-  # selection:
-  #   text: '#ffffff'
-  #   background: '#313f55'
+  #   foreground: '#c4d1ed'
 
   # # Normal colors
   # normal:
