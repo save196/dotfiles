@@ -7,7 +7,7 @@ OUT="$1"
 
 if [ "$connected" -eq "1" ]; then
     second=$(xrandr --listactivemonitors | tail -n +2 | grep -v "$main" | awk 'END {print $NF}')
-    [ -z "$second" ] || xrandr --output "$second" --auto --left-of "$main" && $HOME/.fehbg
+    [ -z "$second" ] || xrandr --output "$second" --auto --left-of "$main"
 
     [ -z "$OUT" ] && OUT=$(printf "Left\\nRight\\nTop\\nMirror" | dmenu -i -l 4) && echo "$OUT" > $HOME/.local/bin/.project
 
@@ -20,15 +20,16 @@ else
     [ "$2" == "primary" ] && PRIMARY2="--primary" || PRIMARY1="--primary"
 
     if [ "$OUT" == "Left" ]; then
-        xrandr --output "$main" --auto $PRIMARY1 --output "$second" --auto --left-of "$main" $PRIMARY2 && $HOME/.fehbg
+        xrandr --output "$main" --auto $PRIMARY1 --output "$second" --auto --left-of "$main" $PRIMARY2
     elif [ "$OUT" == "Right" ]; then
-        xrandr --output "$main" --auto $PRIMARY1 --output "$second" --auto --right-of "$main" $PRIMARY2 && $HOME/.fehbg
+        xrandr --output "$main" --auto $PRIMARY1 --output "$second" --auto --right-of "$main" $PRIMARY2
     elif [ "$OUT" == "Top" ]; then
-        xrandr --output "$main" --auto $PRIMARY1 --output "$second" --auto --above "$main" $PRIMARY2 && $HOME/.fehbg
+        xrandr --output "$main" --auto $PRIMARY1 --output "$second" --auto --above "$main" $PRIMARY2
     else
         exit 1
     fi
     echo "$OUT" > $HOME/.local/bin/.project
 fi
 
+$HOME/.fehbg
 xset r rate 300 50 &
