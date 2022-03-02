@@ -19,6 +19,7 @@ Plug 'neomake/neomake'
 Plug 'pearofducks/ansible-vim'
 Plug 'tpope/vim-fugitive'
 Plug 'morhetz/gruvbox'
+Plug 'audibleblink/hackthebox.vim'
 Plug 'tommcdo/vim-fugitive-blame-ext'
 Plug 'mfukar/robotframework-vim'
 Plug 'neomutt/neomutt.vim'
@@ -51,6 +52,7 @@ set clipboard+=unnamedplus
         set termguicolors
         set bg=dark
         let g:gruvbox_italic=1
+        let g:hackthebox_terminal_italic=1
         colorscheme gruvbox
         let g:airline_theme='base16_gruvbox_dark_hard'
         let g:airline_powerline_fonts = 1
