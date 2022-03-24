@@ -20,9 +20,9 @@ from enum import Enum
 from pathlib import Path
 
 PSEUDO_FS_PATH = "/sys/class/power_supply/"
-CURRENT_CHARGE_FILENAME = "charge_now"
-MAX_CHARGE_FILENAME = "charge_full"
-POWER_DRAW_FILENAME = "current_now"
+CURRENT_CHARGE_FILENAME = "(energy_now|charge_now)"
+MAX_CHARGE_FILENAME = "(energy_full|charge_full)"
+POWER_DRAW_FILENAME = "(power_now|current_now)"
 TLP_THRESHOLD_PERCENTAGE = 1.0
 PERCENTAGE_FORMAT = ".0%"
 
@@ -73,11 +73,22 @@ def get_configuration() -> Configuration:
     for x in Path(PSEUDO_FS_PATH).iterdir():
         bat_name = str(x.parts[len(x.parts) - 1])
         if re.match("^BAT\d+$", bat_name):
+            current_charge_filename = ""
+            max_charge_filename = ""
+            power_draw_filename = ""
+            for y in Path(f"{PSEUDO_FS_PATH}{bat_name}").iterdir():
+                filename = str(y.parts[len(y.parts) - 1])
+                if re.match(CURRENT_CHARGE_FILENAME, filename):
+                    current_charge_filename = filename
+                elif re.match(MAX_CHARGE_FILENAME, filename):
+                    max_charge_filename = filename
+                elif re.match(POWER_DRAW_FILENAME, filename):
+                    power_draw_filename = filename
             batteries.append(Battery(
                 get_status(bat_name),
-                get_current_charge(bat_name),
-                get_max_charge(bat_name),
-                get_power_draw(bat_name)))
+                get_bat_value(bat_name, current_charge_filename),
+                get_bat_value(bat_name, max_charge_filename),
+                get_bat_value(bat_name, power_draw_filename)))
 
     # calculate global status, assumes that if a battery is not passive, it will be discharging or charging
     config_status = Status.PASSIVE
@@ -105,17 +116,8 @@ def get_status(bat_name: str) -> Status:
         raise ValueError
 
 
-def get_current_charge(bat_name: str) -> int:
-    return int(Path(f"{PSEUDO_FS_PATH}{bat_name}/{CURRENT_CHARGE_FILENAME}").open().read().strip())
-
-
-def get_max_charge(bat_name: str) -> int:
-    return int(Path(f"{PSEUDO_FS_PATH}{bat_name}/{MAX_CHARGE_FILENAME}").open().read().strip())
-
-
-def get_power_draw(bat_name: str) -> int:
-    return int(Path(f"{PSEUDO_FS_PATH}{bat_name}/{POWER_DRAW_FILENAME}").open().read().strip())
-
+def get_bat_value(bat_name: str, filename: str) -> int:
+    return int(Path(f"{PSEUDO_FS_PATH}{bat_name}/{filename}").open().read().strip())
 
 def calc_time(batteries: list, status: Status) -> int:
     if status == Status.PASSIVE:
