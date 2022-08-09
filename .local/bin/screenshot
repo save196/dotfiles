@@ -2,13 +2,15 @@
 
 mkdir -p "$HOME/Pictures/Screenshots"
 
-IMG_NAME="$HOME$(date +'/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png')"
+IMG_NAME="$HOME$(date +'/Pictures/Screenshots/Screenshot_from_%Y-%m-%d_%H-%M-%S.png')"
 
 if [ -z "$1" ]; then
     import -window root "$IMG_NAME"
-    cat "$IMG_NAME" | xclip -selection clipboard -t image/png
+    xclip -selection clipboard -t image/png < "$IMG_NAME"
+    echo -n "$IMG_NAME" | xclip
     exit
 fi
 
 import "$IMG_NAME"
-cat "$IMG_NAME" | xclip -selection clipboard -t image/png
+xclip -selection clipboard -t image/png < "$IMG_NAME"
+echo -n "$IMG_NAME" | xclip

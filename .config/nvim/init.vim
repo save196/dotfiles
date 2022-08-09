@@ -1,10 +1,10 @@
 let mapleader =","
 
 if ! filereadable(expand('~/.config/nvim/autoload/plug.vim'))
-	echo "Downloading junegunn/vim-plug to manage plugins..."
-	silent !mkdir -p ~/.config/nvim/autoload/
-	silent !curl "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim" > ~/.config/nvim/autoload/plug.vim
-	autocmd VimEnter * PlugInstall
+        echo "Downloading junegunn/vim-plug to manage plugins..."
+        silent !mkdir -p ~/.config/nvim/autoload/
+        silent !curl "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim" > ~/.config/nvim/autoload/plug.vim
+        autocmd VimEnter * PlugInstall
 endif
 
 call plug#begin('~/.config/nvim/plugged')
@@ -32,23 +32,23 @@ Plug 'lambdalisue/nerdfont.vim'
 Plug 'lambdalisue/fern-renderer-nerdfont.vim'
 Plug 'lambdalisue/fern-git-status.vim'
 Plug 'lambdalisue/fern-hijack.vim'
+Plug 'iamcco/markdown-preview.nvim'
 call plug#end()
 
 set go=a
 set mouse=a
-set nohlsearch
 set clipboard+=unnamedplus
 
 " Some basics:
-	nnoremap c "_c
-	nnoremap C "_C
-	nnoremap x "_x
-	set nocompatible
-	filetype plugin on
-	syntax on
-	set encoding=utf-8
-	set number relativenumber
-	set linebreak
+        nnoremap c "_c
+        nnoremap C "_C
+        nnoremap x "_x
+        set nocompatible
+        filetype plugin on
+        syntax on
+        set encoding=utf-8
+        set number relativenumber
+        set linebreak
         set termguicolors
         set bg=dark
         let g:gruvbox_italic=1
@@ -56,85 +56,79 @@ set clipboard+=unnamedplus
         let g:airline_theme='base16_gruvbox_dark_hard'
         let g:airline_powerline_fonts = 1
         hi Normal guibg=NONE ctermbg=NONE
-        set hlsearch
-	set tabstop=8 softtabstop=0 expandtab shiftwidth=4 smarttab
+        set tabstop=8 softtabstop=0 expandtab shiftwidth=4 smarttab
 " Enable autocompletion:
-	set wildmode=longest,list,full
+        set wildmode=longest,list,full
 " Disables automatic commenting on newline:
-	autocmd FileType * setlocal formatoptions-=c formatoptions-=r formatoptions-=o
+        autocmd FileType * setlocal formatoptions-=c formatoptions-=r formatoptions-=o
 
 " Goyo plugin makes text more readable when writing prose:
-	map <leader>f :Goyo \| set linebreak<CR>
+        map <leader>f :Goyo \| set linebreak<CR>
 
 " Spell-check set to <leader>o, 'o' for 'orthography':
-	map <leader>o :setlocal spell! spelllang=en_us<CR>
+        map <leader>o :setlocal spell! spelllang=en_us<CR>
 
 " Splits open at the bottom and right, which is non-retarded, unlike vim defaults.
-	set splitbelow splitright
+        set splitbelow splitright
 
 " Fern tree
-	map <leader>n :Fern . -drawer -toggle<CR>
+        map <leader>n :Fern . -drawer -toggle<CR>
 
 " vimling:
-	nm <leader>d :call ToggleDeadKeys()<CR>
-	imap <leader>d <esc>:call ToggleDeadKeys()<CR>a
-	nm <leader>i :call ToggleIPA()<CR>
-	imap <leader>i <esc>:call ToggleIPA()<CR>a
-	nm <leader>q :call ToggleProse()<CR>
+        nm <leader>d :call ToggleDeadKeys()<CR>
+        imap <leader>d <esc>:call ToggleDeadKeys()<CR>a
+        nm <leader>i :call ToggleIPA()<CR>
+        imap <leader>i <esc>:call ToggleIPA()<CR>a
+        nm <leader>q :call ToggleProse()<CR>
 
 " Shortcutting split navigation, saving a keypress:
-	map <C-h> <C-w>h
-	map <C-j> <C-w>j
-	map <C-k> <C-w>k
-	map <C-l> <C-w>l
+        map <C-h> <C-w>h
+        map <C-j> <C-w>j
+        map <C-k> <C-w>k
+        map <C-l> <C-w>l
 
 " Replace ex mode with gq
-	map Q gq
+        map Q gq
 
 " Check file in shellcheck:
-	map <leader>s :!clear && shellcheck %<CR>
+        map <leader>s :!clear && shellcheck %<CR>
 
 " Open my bibliography file in split
-	map <leader>b :vsp<space>$BIB<CR>
-	map <leader>r :vsp<space>$REFER<CR>
+        map <leader>b :vsp<space>$BIB<CR>
+        map <leader>r :vsp<space>$REFER<CR>
 
 " Replace all is aliased to S.
-	nnoremap S :%s//g<Left><Left>
+        nnoremap S :%s//g<Left><Left>
 
 " Compile document, be it groff/LaTeX/markdown/etc.
-	map <leader>c :w! \| !compiler <c-r>%<CR>
+        map <leader>c :w! \| !compiler <c-r>%<CR>
 
 " Open corresponding .pdf/.html or preview
-	map <leader>p :!opout <c-r>%<CR><CR>
+        map <leader>p :!opout <c-r>%<CR><CR>
 
 " Runs a script that cleans out tex build files whenever I close out of a .tex file.
-	autocmd VimLeave *.tex !texclear %
+        autocmd VimLeave *.tex !texclear %
 
 " Ensure files are read as what I want:
-	let g:vimwiki_ext2syntax = {'.Rmd': 'markdown', '.rmd': 'markdown','.md': 'markdown', '.markdown': 'markdown', '.mdown': 'markdown', '.wiki': 'markdown'}
-	map <leader>v :VimwikiIndex
-	autocmd BufRead,BufNewFile /tmp/calcurse*,~/.calcurse/notes/* set filetype=markdown
-	autocmd BufRead,BufNewFile *.ms,*.me,*.mom,*.man set filetype=groff
-	autocmd BufRead,BufNewFile *.tex set filetype=tex
+        let g:vimwiki_ext2syntax = {'.Rmd': 'markdown', '.rmd': 'markdown','.md': 'markdown', '.markdown': 'markdown', '.mdown': 'markdown', '.wiki': 'markdown'}
+        map <leader>v :VimwikiIndex
+        autocmd BufRead,BufNewFile /tmp/calcurse*,~/.calcurse/notes/* set filetype=markdown
+        autocmd BufRead,BufNewFile *.ms,*.me,*.mom,*.man set filetype=groff
+        autocmd BufRead,BufNewFile *.tex set filetype=tex
+        autocmd BufRead,BufNewFile *.md map <leader>m :w! \| :MarkdownPreviewToggle<CR>
 
 " Save file as sudo on files that require root permission
-	cnoremap w!! execute 'silent! write !sudo tee % >/dev/null' <bar> edit!
+        cnoremap w!! execute 'silent! write !sudo tee % >/dev/null' <bar> edit!
 
 " Automatically deletes all trailing whitespace on save.
-	autocmd BufWritePre * %s/\s\+$//e
+        autocmd BufWritePre * %s/\s\+$//e
 
 " When shortcut files are updated, renew bash and ranger configs with new material:
-	autocmd BufWritePost files,directories !shortcuts
+        autocmd BufWritePost files,directories !shortcuts
 " Run xrdb whenever Xdefaults or Xresources are updated.
-	autocmd BufWritePost *Xresources,*Xdefaults !xrdb %
+        autocmd BufWritePost *Xresources,*Xdefaults !xrdb %
 " Update binds when sxhkdrc is updated.
-	autocmd BufWritePost *sxhkdrc !pkill -USR1 sxhkd
-
-" Turns off highlighting on the bits of code that are changed, so the line that is changed is highlighted but the actual text that has changed stands out on the line and is readable.
-" if &diff
-"    highlight! link DiffText MatchParen
-" endif
-
+        autocmd BufWritePost *sxhkdrc !pkill -USR1 sxhkd
 
 " Neomake
 "let g:neomake_makeclean_maker = { 'exe': 'make', 'args': ['clean'] }
@@ -176,3 +170,27 @@ augroup my-fern
 augroup END
 
 let g:fern#renderer = "nerdfont"
+
+
+function OpenMarkdownPreview (url)
+    execute "silent !$BROWSER --new-window ". a:url
+endfunction
+let g:mkdp_browserfunc = 'OpenMarkdownPreview'
+
+nnoremap <space> za
+vnoremap <space> zf
+
+
+function! PasteMarkdownImage(text)
+    let link = a:text
+    exec 'normal! a'.link
+    if link =~? '^\/\([a-z0-9_+-]\+\/\)\+Screenshots\/[a-z0-9_+-]\+\.\(png\|jpg\|jpeg\)$'
+        let myDir = getcwd()
+        let fileName = substitute(system('basename "'. link .'"'), '\n\+$', '', '')
+        exec 'sno,'. link .',\![IMG]('. fileName .'),g'
+        noh
+        exec '!cp "'. link .'" "'. myDir .'"'
+    endif
+endfunction
+
+autocmd BufRead,BufNewFile *.md nnoremap inoremap <MiddleMouse> :call PasteMarkdownImage(@*)<CR><CR>
