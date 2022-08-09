@@ -193,4 +193,4 @@ function! PasteMarkdownImage(text)
     endif
 endfunction
 
-autocmd BufRead,BufNewFile *.md nnoremap inoremap <MiddleMouse> :call PasteMarkdownImage(@*)<CR><CR>
+autocmd BufRead,BufNewFile *.md nnoremap <MiddleMouse> :call PasteMarkdownImage(@*)<CR><CR>
