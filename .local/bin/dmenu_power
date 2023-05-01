@@ -3,11 +3,11 @@
 OUT=$(printf "Shutdown\\nReboot\\nSuspend\\nHibernate" | dmenu -i -l 4)
 
 if [ "$OUT" == "Shutdown" ]; then
-    loginctl poweroff
+    systemctl poweroff
 elif [ "$OUT" == "Reboot" ]; then
-    loginctl reboot
+    systemctl reboot
 elif [ "$OUT" == "Suspend" ]; then
-    loginctl suspend
+    systemctl suspend
 elif [ "$OUT" == "Hibernate" ]; then
-    loginctl hibernate
+    systemctl hibernate
 fi

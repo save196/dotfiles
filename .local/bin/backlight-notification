@@ -9,6 +9,4 @@ if [ "$1" == "dec" ]; then
 fi
 
 BRIGHTNESS=$(xbacklight -get | cut -f1 -d".")
-notify-send.py " Backlight" "$BRIGHTNESS/100" -t 4000 \
-                         --hint string:image-path:video-display boolean:transient:true \
-                         --replaces-process "brightness-popup" &
+notify-send " Backlight" "$BRIGHTNESS/100" -t 4000 -r 1 &

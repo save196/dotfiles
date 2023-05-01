@@ -31,6 +31,11 @@ if [ -d "$HOME/.local/bin/statusbar" ] ; then
     PATH="$HOME/.local/bin/statusbar:$PATH"
 fi
 
+# set PATH so it includes user's cargo bin if it exists
+if [ -d "$HOME/.cargo/bin" ] ; then
+    PATH="$HOME/.cargo/bin:$PATH"
+fi
+
 export _JAVA_AWT_WM_NONREPARENTING=1
 export WINIT_X11_SCALE_FACTOR=1.0
 export EDITOR="nvim"

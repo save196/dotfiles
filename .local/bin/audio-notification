@@ -27,9 +27,7 @@ fi
 
 VOLUME=$(get-volume)
 if [ "$1" == "inc" ] || [ "$1" == "dec" ]; then
-    notify-send.py " Volume" "$VOLUME/100" -t 4000 \
-        --hint string:image-path:video-display boolean:transient:true \
-        --replaces-process "brightness-popup" &
+    notify-send " Volume" "$VOLUME/100" -t 4000 -r 1 &
 fi
 
 pkill -RTMIN+10 dwmblocks
