@@ -2,27 +2,18 @@
 
 VOLUME=$(get-volume)
 
-#N_CHANNELS=$(pactl list sinks | grep '^[[:space:]]Mute:' | wc -l)
-
-if [ "$1" == "inc" ] && [ $VOLUME -lt 100 ]; then
-    pactl set-sink-volume @DEFAULT_SINK@ +10%
-fi
-
-if [ "$1" == "dec" ]; then
+if [ "$1" == "inc" ] && [ $VOLUME -ne 100 ]; then
+    if [ $(($VOLUME+10)) -gt 100 ]; then
+        pactl set-sink-volume @DEFAULT_SINK@ 100%
+    else
+        pactl set-sink-volume @DEFAULT_SINK@ +10%
+    fi
+elif [ "$1" == "dec" ]; then
     pactl set-sink-volume @DEFAULT_SINK@ -10%
-fi
-
-if [ "$1" == "tog" ]; then
+elif [ "$1" == "tog" ]; then
     pactl set-sink-mute @DEFAULT_SINK@ toggle
-    #if [ $N_CHANNELS -gt 1 ]; then
-    #    pactl set-sink-mute 0 toggle
-    #fi
-fi
-
-VOLUME=$(get-volume)
-
-if [ $VOLUME -gt 100 ]; then
-    pactl set-sink-volume @DEFAULT_SINK@ 100%
+elif [ "$1" == "mic-tog" ]; then
+    pactl set-source-mute @DEFAULT_SOURCE@ toggle
 fi
 
 VOLUME=$(get-volume)
