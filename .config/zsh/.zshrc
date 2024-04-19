@@ -98,7 +98,52 @@ source $ZSH/oh-my-zsh.sh
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias vim="nvim"
 alias feh="feh --scale-down"
+alias cal="ncal -wby"
+alias b64d-cp="base64 -d <(xclip -o -sel c)"
+alias tor-reload="sudo systemctl reload tor@default.service"
+alias fzf-edit="fzf --bind 'enter:become(nvim {})'"
+zathura() { tabbed -c zathura $* -e }
 
+venv() {
+    [ ! -d "$HOME/.local/share/python" ] && mkdir -p "$HOME/.local/share/python/"
+    if [ -z "$1" ]; then
+        if [ -z "$VIRTUAL_ENV" ]; then
+            ls "$HOME/.local/share/python"
+        else
+            deactivate
+        fi
+    elif [ -f "$HOME/.local/share/python/$1/bin/activate" ]; then
+        . "$HOME/.local/share/python/$1/bin/activate"
+    elif [ ! -d "$HOME/.local/share/python/$1" ]; then
+        printf "The venv '$1' does not exists. Do you want to create it? (Y/n) "
+        read answer
+        if [ "$answer" = "n" ]; then
+            echo "Bye!"
+        else
+            python3 -m venv --upgrade-deps "$HOME/.local/share/python/$1"
+            . "$HOME/.local/share/python/$1/bin/activate"
+        fi
+    else
+        return 1
+    fi
+}
+
+autoload -Uz add-zsh-hook
+
+function xterm_title_precmd () {
+	print -Pn -- '\e]2;%~\a'
+	[[ "$TERM" == 'screen'* ]] && print -Pn -- '\e_\005{g}%n\005{-}@\005{m}%m\005{-} \005{B}%~\005{-}\e\\'
+}
+
+function xterm_title_preexec () {
+	print -Pn -- '\e]2;' && print -n -- "${(q)1}\a"
+	[[ "$TERM" == 'screen'* ]] && { print -Pn -- '\e_\005{g}%n\005{-}@\005{m}%m\005{-} \005{B}%~\005{-} %# ' && print -n -- "${(q)1}\e\\"; }
+}
+
+if [[ "$TERM" == (Eterm*|alacritty*|aterm*|foot*|gnome*|konsole*|kterm*|putty*|rxvt*|screen*|wezterm*|tmux*|xterm*) ]]; then
+	add-zsh-hook -Uz precmd xterm_title_precmd
+	add-zsh-hook -Uz preexec xterm_title_preexec
+fi
 
 source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh 2>/dev/null
 prompt_context(){}
