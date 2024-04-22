@@ -9,13 +9,14 @@ else
     # Fetch active sessions' names (excluding temp sessions)
     active_sessions=$(tmux ls | cut -f1 -d: | grep -Ev "^session_[0-9]+$")
     # Find all potential sessions
-    sessions=$(find ~/Documents/projects ~/Documents/htb -mindepth 1 -maxdepth 1 -type d)
+    sessions=$(find ~/Documents/projects ~/Documents/htb -mindepth 1 -maxdepth 1 -type d; pwd)
+    sessions=$(echo "$sessions" | sort -u)
     # Remove active sessions from potential sessions list
     for session in $active_sessions; do
         sessions=$(echo "$sessions" | grep -v "/$session$")
     done
     # Prompt for selection using fzf
-    selected=$(printf "%s\n%s" "$sessions" "$active_sessions" | fzf)
+    selected=$(printf "%s\n%s" "$active_sessions" "$sessions" | fzf)
 fi
 
 # Exit if no session is selected
