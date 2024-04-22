@@ -7,6 +7,6 @@
 [ -z "$1" ] && exit
 
 icon="$2"
-[ -z "$2" ] && icon="$1"
+[ -z "$2" ] && icon="󰗮"
 
 printf "%s %s\n" "$icon" "$(df -h "$1" --output=avail | awk ' /[0-9]/ {print $1-G " GB"}')"

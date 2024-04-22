@@ -1,13 +1,15 @@
 #!/bin/sh
 
-if [ -d /sys/class/net/w* ]; then
-    [ "$(cat /sys/class/net/w*/operstate)" = 'down' ] && wifiicon="📡"
+ethicon=$(cat /sys/class/net/e*/operstate 2>/dev/null | sed "s/down//;s/up//")
 
-    [ ! -n "${wifiicon}" ] && interface=$(cat "$(dirname $0)/.wifi" || iw dev | awk '$1=="Interface"{print $2}' > "$(dirname $0)/.wifi") && \
+if [ -d /sys/class/net/wl* ]; then
+    [ "$(cat /sys/class/net/wl*/operstate)" = 'down' ] && wifiicon="󰖪"
+
+    [ -z "${wifiicon}" ] && interface=$(iw dev | awk '$1=="Interface"{print $2}') && \
         wifiicon=$(grep "^\s*w" /proc/net/wireless | awk '{ print int($3 * 100 / 70) "%" }') && \
         ssid=$(iw dev "$interface" link | grep "SSID" | awk '{ print "", $2 $3 }') && wifiicon=$ssid' '$wifiicon
 
-    printf "%s%s\n" "$wifiicon" "$(cat /sys/class/net/e*/operstate 2>/dev/null | sed "s/down//;s/up/ /")"
-else
-    cat /sys/class/net/e*/operstate 2>/dev/null | sed "s/down//;s/up//"
+    printf "%s" "$wifiicon"
+    [ -n "$ethicon" ] && printf " "
 fi
+echo "$ethicon"

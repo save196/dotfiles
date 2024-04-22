@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
 
     ulli used;
     ulli total;
-    printf(" ");
+    printf(" ");
     fflush(stdout);
 
     sleep(t);
