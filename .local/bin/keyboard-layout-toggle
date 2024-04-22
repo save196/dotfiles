@@ -1,5 +1,23 @@
 #!/bin/bash
 
-(setxkbmap -query | grep -q "layout:\s\+us") && setxkbmap fi || setxkbmap us
+# Get current layout
+layout=$(setxkbmap -query | awk '/layout:/ {print $2}')
+
+# Use an environment variable to specify custom layouts, fallback to "us,fi"
+layout_list="${KB_LAYOUTS:-us,fi}"
+
+# Find the index of the current layout in the array
+IFS=',' read -r -a layouts <<< "$layout_list"
+current_index=-1
+for i in "${!layouts[@]}"; do
+  if [ "${layouts[$i]}" = "$layout" ]; then
+    current_index=$i
+    break
+  fi
+done
+
+# Set the new layout
+new_index=$(( (current_index + 1) % ${#layouts[@]} ))
+setxkbmap "${layouts[$new_index]}"
 
 pkill -RTMIN+11 dwmblocks
