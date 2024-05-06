@@ -1,0 +1,153 @@
+" Set leader key
+let mapleader = ","
+
+" Download vim-plug if not already installed
+if !filereadable(expand('~/.vim/autoload/plug.vim'))
+    echo "Downloading junegunn/vim-plug to manage plugins..."
+    silent !mkdir -p ~/.vim/autoload/
+    silent !curl "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim" > ~/.vim/autoload/plug.vim
+    autocmd VimEnter * PlugInstall
+endif
+
+" Plugin configuration
+call plug#begin('~/.vim/plugged')
+Plug 'ap/vim-css-color'
+Plug 'audibleblink/hackthebox.vim'
+Plug 'dense-analysis/ale'
+Plug 'lambdalisue/fern.vim'
+Plug 'lambdalisue/fern-git-status.vim'
+Plug 'lambdalisue/fern-hijack.vim'
+Plug 'lambdalisue/fern-renderer-nerdfont.vim'
+Plug 'lambdalisue/nerdfont.vim'
+Plug 'morhetz/gruvbox'
+Plug 'tpope/vim-surround'
+Plug 'tpope/vim-commentary'
+Plug 'tpope/vim-fugitive'
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
+Plug 'vimwiki/vimwiki'
+call plug#end()
+
+
+" General settings
+set go=a
+set mouse=a
+set clipboard+=unnamedplus
+set nocompatible
+filetype plugin on
+syntax on
+set encoding=utf-8
+set number relativenumber
+set linebreak
+set termguicolors
+set ignorecase
+set smartcase
+set hlsearch
+set incsearch
+set bg=dark
+set tabstop=4 softtabstop=4 expandtab shiftwidth=4 smartindent smarttab
+set wildmode=longest,list,full
+" Cursor settings
+let &t_SI = "\e[6 q"
+let &t_EI = "\e[2 q"
+
+
+" Mappings
+
+" Basic mappings
+nnoremap c "_c
+nnoremap C "_C
+nnoremap x "_x
+nnoremap <space> za
+vnoremap <space> zf
+nnoremap <silent> * :call setreg('/', '\C\<' . expand('<cword>') . '\>')<CR>:set hlsearch<CR>
+nnoremap S :%s//g<Left><Left>
+
+" Spell-check mapping
+map <leader>o :setlocal spell! spelllang=en_us<CR>
+
+" Split navigation shortcuts
+map <C-h> <C-w>h
+map <C-j> <C-w>j
+map <C-k> <C-w>k
+map <C-l> <C-w>l
+
+" Replace ex mode with gq
+map Q gq
+
+" Save file as sudo on files that require root permission
+cnoremap w!! execute 'silent! write !sudo tee % >/dev/null' <bar> edit!
+
+
+" Plugin settings
+
+" ALE settings
+let g:ale_virtualtext_cursor = 'current'
+
+" Airline settings
+let g:airline_powerline_fonts = 1
+let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#tabline#buffer_nr_show = 1
+let g:airline#extensions#tabline#formatter = 'unique_tail'
+
+" Fern settings
+let g:fern#renderer = "nerdfont"
+augroup my-fern
+    autocmd!
+    autocmd FileType fern call s:init_fern()
+augroup END
+function! s:init_fern() abort
+    setlocal norelativenumber nonumber
+    nmap <buffer> <C-l> <C-w>l
+endfunction
+map <leader>n :Fern . -drawer -toggle<CR>
+
+" Vimwiki settings
+let wiki = {'syntax': 'markdown', 'ext': '.md'}
+let g:vimwiki_list = [wiki]
+autocmd CursorHold,BufLeave ~/vimwiki/*.md update
+autocmd Syntax vimwiki syn match customMarkdownBlockquote '^\s*>\+' containedin=ALL
+autocmd Syntax vimwiki hi def link customMarkdownBlockquote Comment
+
+
+" Auto commands
+
+" Disables automatic commenting on newline
+autocmd FileType * setlocal formatoptions-=c formatoptions-=r formatoptions-=o
+
+" Filetype-specific settings
+autocmd BufRead,BufNewFile /tmp/calcurse*,~/.calcurse/notes/* set filetype=markdown
+autocmd BufRead,BufNewFile *.ms,*.me,*.mom,*.man set filetype=groff
+autocmd BufRead,BufNewFile *.tex set filetype=tex
+
+" Automatically deletes all trailing whitespace on save
+autocmd BufWritePre * %s/\s\+$//e
+
+" Run xrdb whenever Xdefaults or Xresources are updated
+autocmd BufWritePost *Xresources,*Xdefaults !xrdb %
+
+
+" Theme settings
+let g:colors_name = 'gruvbox'
+if g:colors_name == 'gruvbox'
+    let g:airline_theme = 'base16_gruvbox_dark_hard'
+    let g:gruvbox_italic = 1
+    hi VimwikiHeader1 guifg=#98971A
+    hi VimwikiHeader2 guifg=#458588
+    hi VimwikiHeader3 guifg=#D79921
+    hi VimwikiHeader4 guifg=#B16286
+    hi VimwikiHeader5 guifg=#689D6A
+    hi VimwikiHeader6 guifg=#CC241D
+    colorscheme gruvbox
+elseif g:colors_name == 'hackthebox'
+    let g:airline_theme = 'onedark'
+    autocmd Syntax vimwiki hi def link Underlined MatchParen
+    hi VimwikiHeader1 guifg=#9fef00
+    hi VimwikiHeader2 guifg=#0086ff
+    hi VimwikiHeader3 guifg=#ffaf00
+    hi VimwikiHeader4 guifg=#ff3e3e
+    hi VimwikiHeader5 guifg=#9f00ff
+    hi VimwikiHeader6 guifg=#2ee7b6
+    colorscheme hackthebox
+endif
+hi Normal guibg=NONE ctermbg=NONE
