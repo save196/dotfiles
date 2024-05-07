@@ -14,6 +14,8 @@ call plug#begin('~/.vim/plugged')
 Plug 'ap/vim-css-color'
 Plug 'audibleblink/hackthebox.vim'
 Plug 'dense-analysis/ale'
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
 Plug 'lambdalisue/fern.vim'
 Plug 'lambdalisue/fern-git-status.vim'
 Plug 'lambdalisue/fern-hijack.vim'
@@ -37,6 +39,7 @@ set nocompatible
 filetype plugin on
 syntax on
 set encoding=utf-8
+set ttimeoutlen=10
 set number relativenumber
 set linebreak
 set termguicolors
@@ -77,6 +80,10 @@ map Q gq
 
 " Save file as sudo on files that require root permission
 cnoremap w!! execute 'silent! write !sudo tee % >/dev/null' <bar> edit!
+
+" fzf mapping
+nnoremap <leader>f :GFiles<CR>
+nnoremap <leader>g :Rg<CR>
 
 
 " Plugin settings
