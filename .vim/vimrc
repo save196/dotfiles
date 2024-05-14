@@ -32,25 +32,39 @@ call plug#end()
 
 
 " General settings
+set nocompatible
+set backspace=indent,eol,start
 set go=a
 set mouse=a
 set clipboard+=unnamedplus
-set nocompatible
-filetype plugin on
+filetype plugin indent on
 syntax on
 set encoding=utf-8
-set ttimeoutlen=10
-set number relativenumber
-set linebreak
+set wildmode=list:longest,full
 set termguicolors
-set ignorecase
-set smartcase
-set hlsearch
-set incsearch
-set bg=dark
-set tabstop=4 softtabstop=4 expandtab shiftwidth=4 smartindent smarttab
-set wildmode=longest,list,full
+
+" Line number
+set number relativenumber
+
+" Case settings
+set ignorecase smartcase
+
+" Search settings
+set hlsearch incsearch
+
+" Split rules
+set splitright
+set splitbelow
+
+" Indentation and wrap settings
+set tabstop=4 softtabstop=4 shiftwidth=4 expandtab smartindent
+set linebreak
+set breakindent
+
 " Cursor settings
+set scrolloff=5
+set cursorline
+set ttimeoutlen=10
 let &t_SI = "\e[6 q"
 let &t_EI = "\e[2 q"
 
@@ -61,8 +75,6 @@ let &t_EI = "\e[2 q"
 nnoremap c "_c
 nnoremap C "_C
 nnoremap x "_x
-nnoremap <space> za
-vnoremap <space> zf
 nnoremap <silent> * :call setreg('/', '\C\<' . expand('<cword>') . '\>')<CR>:set hlsearch<CR>
 nnoremap S :%s//g<Left><Left>
 
@@ -81,12 +93,12 @@ map Q gq
 " Save file as sudo on files that require root permission
 cnoremap w!! execute 'silent! write !sudo tee % >/dev/null' <bar> edit!
 
-" fzf mapping
-nnoremap <leader>f :GFiles<CR>
-nnoremap <leader>g :Rg<CR>
-
 
 " Plugin settings
+
+" Fzf settings
+nnoremap <leader>f :GFiles<CR>
+nnoremap <leader>g :Rg<CR>
 
 " ALE settings
 let g:ale_virtualtext_cursor = 'current'
@@ -128,13 +140,15 @@ autocmd BufRead,BufNewFile *.ms,*.me,*.mom,*.man set filetype=groff
 autocmd BufRead,BufNewFile *.tex set filetype=tex
 
 " Automatically deletes all trailing whitespace on save
-autocmd BufWritePre * %s/\s\+$//e
+autocmd BufWritePre * let save_cursor = getpos(".") | %s/\s\+$//e | call setpos('.', save_cursor)
 
 " Run xrdb whenever Xdefaults or Xresources are updated
 autocmd BufWritePost *Xresources,*Xdefaults !xrdb %
 
 
-" Theme settings
+" THEME
+
+set bg=dark
 let g:colors_name = 'gruvbox'
 if g:colors_name == 'gruvbox'
     let g:airline_theme = 'base16_gruvbox_dark_hard'
