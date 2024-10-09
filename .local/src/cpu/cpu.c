@@ -4,41 +4,26 @@
 //
 // Loosely based on bandwidth2 (originally by Guillaume Coré <fridim@onfi.re>)
 
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
-#include <getopt.h>
-
-#define RED "#FF7373"
-#define ORANGE "#FFA500"
 
 typedef unsigned long long int ulli;
 
-void usage(char *argv[])
-{
+void usage(char *argv[]) {
   printf("Usage: %s "
-         "[-t seconds] [-w %%age] [-c %%age] [-d decimals] [-l label] [-h]\n",
+         "[-t seconds] [-h]\n",
          argv[0]);
   printf("\n");
   printf("-t seconds\trefresh time (default is 1)\n");
-  printf("-w %%\tSet warning (color orange) for cpu usage. (default: none)\n");
-  printf("-c %%\tSet critical (color red) for cpu usage. (default: none)\n");
-  printf("-d number\tNumber of decimal places for percentage (default: 2)\n");
-  printf("-l label\tLabel to print before the cpu usage (default: CPU)\n");
   printf("-h \t\tthis help\n");
   printf("\n");
 }
 
-void display(const char *label, double used,
-             int const warning, int const critical, int const decimals)
-{
-  printf("%.*lf%%\n", decimals, used);
-}
-
-ulli get_usage(ulli *used_jiffies)
-{
+ulli get_usage(ulli *used_jiffies) {
   FILE *fd = fopen("/proc/stat", "r");
   ulli user, nice, sys, idle, iowait, irq, sirq, steal, guest, nguest;
 
@@ -47,8 +32,8 @@ ulli get_usage(ulli *used_jiffies)
     exit(EXIT_FAILURE);
   }
   if (fscanf(fd, "cpu  %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu",
-             &user, &nice, &sys, &idle, &iowait, &irq, &sirq,
-             &steal, &guest, &nguest) != 10) {
+             &user, &nice, &sys, &idle, &iowait, &irq, &sirq, &steal, &guest,
+             &nguest) != 10) {
     perror("Couldn't read jiffies from /proc/stat\n");
     exit(EXIT_FAILURE);
   }
@@ -58,45 +43,19 @@ ulli get_usage(ulli *used_jiffies)
   return *used_jiffies + idle + iowait;
 }
 
-int main(int argc, char *argv[])
-{
-  int warning = 50, critical = 80, t = 1, decimals = 1;
-  char *label = "CPU ";
+int main(int argc, char *argv[]) {
+  int t = 1;
   int c;
   char *envvar = NULL;
 
   envvar = getenv("REFRESH_TIME");
   if (envvar)
     t = atoi(envvar);
-  envvar = getenv("WARN_PERCENT");
-  if (envvar)
-    warning = atoi(envvar);
-  envvar = getenv("CRIT_PERCENT");
-  if (envvar)
-    critical = atoi(envvar);
-  envvar = getenv("DECIMALS");
-  if (envvar)
-    decimals = atoi(envvar);
-  envvar = getenv("LABEL");
-  if (envvar)
-    label = envvar;
 
-  while (c = getopt(argc, argv, "ht:w:c:d:l:"), c != -1) {
+  while (c = getopt(argc, argv, "ht:"), c != -1) {
     switch (c) {
     case 't':
       t = atoi(optarg);
-      break;
-    case 'w':
-      warning = atoi(optarg);
-      break;
-    case 'c':
-      critical = atoi(optarg);
-      break;
-    case 'd':
-      decimals = atoi(optarg);
-      break;
-    case 'l':
-      label = optarg;
       break;
     case 'h':
       usage(argv);
@@ -109,17 +68,16 @@ int main(int argc, char *argv[])
 
   old_total = get_usage(&old_used);
 
-    ulli used;
-    ulli total;
-    printf(" ");
-    fflush(stdout);
+  ulli used;
+  ulli total;
+  printf(" ");
+  fflush(stdout);
 
-    sleep(t);
-    total = get_usage(&used);
+  sleep(t);
+  total = get_usage(&used);
 
-    display(label, 100.0D * (used - old_used) / (total - old_total),
-            warning, critical, decimals);
-    fflush(stdout);
+  printf("%.0f%%\n", 100.0 * (used - old_used) / (total - old_total));
+  fflush(stdout);
 
   return EXIT_SUCCESS;
 }
