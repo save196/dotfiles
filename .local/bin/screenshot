@@ -2,7 +2,7 @@
 
 mkdir -p "$HOME/Pictures/Screenshots"
 
-IMG_NAME="$HOME/Pictures/Screenshots/$(date +%F_%H-%M).png"
+IMG_NAME="$HOME/Pictures/Screenshots/$(date +%F_%H%M%S).png"
 
 if [ -z "$1" ]; then
     flameshot screen -p "$IMG_NAME" -n 0
