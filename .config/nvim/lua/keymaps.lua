@@ -26,3 +26,12 @@ map('', '<C-l>', '<C-w>l')
 
 -- Replace all is aliased to S
 map('n', 'S', ':%s//g<Left><Left>')
+
+-- Exit terminal
+map('t', '<Esc><Esc>', '<C-\\><C-n>')
+
+-- Diagnostic keymaps
+map('n', '[d', vim.diagnostic.goto_prev)
+map('n', ']d', vim.diagnostic.goto_next)
+map('n', '<leader>e', vim.diagnostic.open_float)
+map('n', '<leader>q', vim.diagnostic.setloclist)
