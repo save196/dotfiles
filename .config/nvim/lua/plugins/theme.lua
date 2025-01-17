@@ -5,7 +5,8 @@ local gruvbox = {
   "ellisonleao/gruvbox.nvim",
   priority = 1000,
   config = function()
-    vim.cmd('colorscheme gruvbox')
+    vim.cmd.colorscheme('gruvbox')
+    vim.cmd.highlight({ "StatusLine", "cterm=NONE", "gui=NONE" })
     vim.api.nvim_set_hl(0, 'Normal', { ctermbg = 'NONE', bg = 'NONE' })
     vim.api.nvim_set_hl(0, 'SignColumn', { bg = 'NONE' })
     vim.api.nvim_set_hl(0, 'DiagnosticSignError', { link = 'GruvboxRed' })
@@ -24,7 +25,7 @@ local hackthebox = {
   "audibleblink/hackthebox.vim",
   priority = 1100,
   config = function()
-    vim.cmd('colorscheme hackthebox')
+    vim.cmd.colorscheme('hackthebox')
     vim.api.nvim_set_hl(0, 'Normal', { ctermbg = 'NONE', bg = 'NONE' })
     vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextError', { bg = 'NONE' })
     vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextHint', { bg = 'NONE' })
