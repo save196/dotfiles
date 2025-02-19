@@ -48,6 +48,8 @@ fi
 
 export _JAVA_AWT_WM_NONREPARENTING=1
 export WINIT_X11_SCALE_FACTOR=1.0
+export XCURSOR_SIZE=36
+export QT_STYLE_OVERRIDE="Adwaita-Dark"
 export EDITOR="nvim"
 export TERMINAL="kitty"
 export BROWSER="brave-browser"
