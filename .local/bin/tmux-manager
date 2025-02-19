@@ -2,21 +2,27 @@
 
 # Description: This script lists and manages tmux sessions using fzf for interactive selection.
 
+# Define the directories to list
+search_dirs=(
+    "$HOME/Documents/projects"
+    "$HOME/Documents/htb"
+)
+
 # Interactive session selection
 if [[ $# -eq 1 ]]; then
     selected=$1
 else
     # Fetch active sessions' names (excluding temp sessions)
-    active_sessions=$(tmux ls | cut -f1 -d: | grep -Ev "^session_[0-9]+$")
+    active_sessions=$(tmux ls 2>/dev/null | cut -f1 -d: | grep -Ev "^session_[0-9]+$")
     # Find all potential sessions
-    sessions=$(find ~/Documents/projects ~/Documents/htb -mindepth 1 -maxdepth 1 -type d; pwd)
+    sessions=$(find "${search_dirs[@]}" -mindepth 1 -maxdepth 1 -type d; pwd)
     sessions=$(echo "$sessions" | sort -u)
     # Remove active sessions from potential sessions list
     for session in $active_sessions; do
         sessions=$(echo "$sessions" | grep -v "/$session$")
     done
     # Prompt for selection using fzf
-    selected=$(printf "%s\n%s" "$active_sessions" "$sessions" | fzf)
+    selected=$(printf "%s\n%s" "$active_sessions" "$sessions" | sed '/^$/d' | fzf)
 fi
 
 # Exit if no session is selected
