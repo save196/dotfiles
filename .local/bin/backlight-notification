@@ -1,12 +1,17 @@
 #!/bin/bash
 
-if [ "$1" == "inc" ]; then
-    xbacklight + 5
-fi
+BRIGHTNESS=$(
+    case "$1" in
+        inc)
+            brightnessctl -m set +7%
+            ;;
+        dec)
+            brightnessctl -m -n1 set 7%-
+            ;;
+        *)
+            brightnessctl -m i
+            ;;
+    esac | grep -oP '[0-9]+(?=%)'
+)
 
-if [ "$1" == "dec" ]; then
-    xbacklight - 5
-fi
-
-BRIGHTNESS=$(xbacklight -get | cut -f1 -d".")
 notify-send " Backlight" "$BRIGHTNESS/100" -t 4000 -r 1 &
