@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# Function to get current buffer size
+get_current_buffer_size() {
+    local value
+    value=$(pw-metadata -n settings 0 clock.force-quantum | grep -o "value:'[0-9]*" | grep -o "[0-9]*")
+    if [[ "$value" == "0" ]]; then
+        value=$(pw-metadata -n settings 0 clock.quantum | grep -o "value:'[0-9]*" | grep -o "[0-9]*")
+    fi
+    echo "$value"
+}
+
+# Function to get current sample rate
+get_current_sample_rate() {
+    local value
+    value=$(pw-metadata -n settings 0 clock.force-rate | grep -o "value:'[0-9]*" | grep -o "[0-9]*")
+    if [[ "$value" == "0" ]]; then
+        value=$(pw-metadata -n settings 0 clock.rate | grep -o "value:'[0-9]*" | grep -o "[0-9]*")
+    fi
+    echo "$value"
+}
+
+# Define common buffer sizes and sample rates
+BUFFER_SIZES=("64" "128" "256" "512" "1024" "2048" "Reset")
+SAMPLE_RATES=("44100" "48000" "96000" "192000" "Reset")
+
+# Function to set buffer size
+set_buffer_size() {
+    local buffer_size
+    buffer_size=$(printf "%s\n" "${BUFFER_SIZES[@]}" | dmenu -l 6 -p "Select Buffer Size:")
+    if [[ "$buffer_size" == "Reset" ]]; then
+        buffer_size="0"
+    fi
+    if [[ -n "$buffer_size" ]]; then
+        pw-metadata -n settings 0 clock.force-quantum "$buffer_size"
+    fi
+}
+
+# Function to set sample rate
+set_sample_rate() {
+    local sample_rate
+    sample_rate=$(printf "%s\n" "${SAMPLE_RATES[@]}" | dmenu -l 5 -p "Select Sample Rate:")
+    if [[ "$sample_rate" == "Reset" ]]; then
+        sample_rate="0"
+    fi
+    if [[ -n "$sample_rate" ]]; then
+        pw-metadata -n settings 0 clock.force-rate "$sample_rate"
+    fi
+}
+
+# Get current settings
+current_buffer_size=$(get_current_buffer_size)
+current_sample_rate=$(get_current_sample_rate)
+
+# Main menu
+choice=$(printf "Buffer Size (%s)\nSample Rate (%s)\n" "$current_buffer_size" "$current_sample_rate" | dmenu -l 2 -p "Choose an option:")
+case "$choice" in
+    "Buffer Size ($current_buffer_size)") set_buffer_size ;;
+    "Sample Rate ($current_sample_rate)") set_sample_rate ;;
+esac
