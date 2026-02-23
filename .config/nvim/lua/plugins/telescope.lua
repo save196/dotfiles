@@ -12,6 +12,11 @@ return {
       local telescope = require('telescope')
       telescope.setup {
         defaults = {
+          path_display = {
+            filename_first = {
+              reverse_directories = true
+            }
+          },
           mappings = {
             i = {
               ["<Esc>"] = "close"
