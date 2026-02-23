@@ -3,10 +3,10 @@
 BRIGHTNESS=$(
     case "$1" in
         inc)
-            brightnessctl -m set +7%
+            brightnessctl -m set +5%
             ;;
         dec)
-            brightnessctl -m -n1 set 7%-
+            brightnessctl -m -n1 set 5%-
             ;;
         *)
             brightnessctl -m i
