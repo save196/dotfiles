@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+import uuid
+import time
+import subprocess
+from jeepney import MessageType, HeaderFields, new_method_return, new_error
+from jeepney.bus_messages import message_bus
+from jeepney.io.blocking import open_dbus_connection
+import argparse
+
+SERVER_NAME = "org.freedesktop.ScreenSaver"
+
+
+class ScreenSaverService:
+    def __init__(self):
+        self.inhibitions = {}
+
+    def inhibit(self, application_name, reason_for_inhibit):
+        cookie = int(uuid.uuid4()) & 0xFFFFFFFF
+        self.inhibitions[cookie] = (application_name, reason_for_inhibit)
+        if len(self.inhibitions) == 1:
+            subprocess.run(["xset", "s", "off", "-dpms"])
+            subprocess.run(["xautolock", "-disable"])
+        return cookie
+
+    def uninhibit(self, cookie):
+        if cookie in self.inhibitions:
+            self.inhibitions.pop(cookie)
+            if not self.inhibitions:
+                subprocess.run(["xset", "s", "on", "+dpms"])
+                subprocess.run(["xautolock", "-enable"])
+
+    def update_xautolock(self, suspend_time):
+        if not suspend_time or suspend_time < 1:
+            suspend_time = 60
+        subprocess.run(["xautolock", "-exit"])
+        time.sleep(1)
+        subprocess.Popen(
+            ["xautolock", "-time", str(suspend_time), "-locker", "systemctl suspend"]
+        )
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Custom Screen Saver Service")
+    parser.add_argument(
+        "--suspend-time", type=int, help="Time in minutes before suspend"
+    )
+    args = parser.parse_args()
+
+    service = ScreenSaverService()
+    with open_dbus_connection() as connection:
+        name_reply = connection.send_and_get_reply(message_bus.RequestName(SERVER_NAME))
+        if name_reply.body[0] != 1:
+            if args.suspend_time:
+                service.update_xautolock(args.suspend_time)
+            return
+
+        # Start xss-lock in the background
+        subprocess.Popen(["xss-lock", "--", "slock"])
+        service.update_xautolock(args.suspend_time)
+
+        while True:
+            msg = connection.receive()
+            if msg.header.message_type != MessageType.method_call:
+                continue
+            method = msg.header.fields[HeaderFields.member]
+            if method == "Inhibit":
+                cookie = service.inhibit(*msg.body)
+                rep = new_method_return(msg, "u", (cookie,))
+            elif method == "UnInhibit":
+                service.uninhibit(*msg.body)
+                rep = new_method_return(msg, "", ())
+            else:
+                rep = new_error(msg, SERVER_NAME + ".Error.NoMethod")
+            connection.send_message(rep)
+
+
+if __name__ == "__main__":
+    main()

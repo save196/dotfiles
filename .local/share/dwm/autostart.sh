@@ -8,7 +8,6 @@ xset r rate 300 50 &
 keepassxc &
 pgrep redshift || redshift &
 dmenu_project Last
-xss-lock -- slock &
-xautolock -time 60 -locker "systemctl suspend" &
+pgrep -f slock-dbus || slock-dbus &
 pgrep dwmblocks || dwmblocks &
 /usr/bin/nextcloud --background &
