@@ -7,7 +7,15 @@ if [ "$OUT" == "Shutdown" ]; then
 elif [ "$OUT" == "Reboot" ]; then
     systemctl reboot
 elif [ "$OUT" == "Suspend" ]; then
-    grep 1 /sys/class/power_supply/AC/online >/dev/null && xset dpms force off || systemctl suspend
+    if grep 1 /sys/class/power_supply/AC/online >/dev/null; then
+        if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
+            swayidle -w timeout 1 'swaylock -f; wlopm --off "*"' resume 'wlopm --on "*"; kill ${PPID}'
+        else
+            xset dpms force off
+        fi
+    else
+        systemctl suspend
+    fi
 elif [ "$OUT" == "Hibernate" ]; then
     systemctl hibernate
 fi
