@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Get Ethernet status
-ethicon=$(cat /sys/class/net/e*/operstate 2>/dev/null | sed "s/down//;s/up//")
+ethicon=$(cat /sys/class/net/e*/operstate 2>/dev/null | grep up | sed "s/up//")
 
 # Initialize Wi-Fi icon
 wifiicon=""
