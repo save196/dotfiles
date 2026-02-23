@@ -1,0 +1,7 @@
+#!/bin/bash
+
+export XDG_CURRENT_DESKTOP=dwl
+export SDL_VIDEODRIVER=wayland
+export QT_QPA_PLATFORM=wayland
+
+dwlblocks | exec dwl -s "~/.local/share/dwl/autostart.sh <&-"
