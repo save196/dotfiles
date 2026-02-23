@@ -53,5 +53,6 @@ export QT_QPA_PLATFORMTHEME=gtk3
 export QT_STYLE_OVERRIDE=Adwaita-dark
 export EDITOR="nvim"
 export TERMINAL="kitty"
-export BROWSER="brave-browser"
+export BROWSER="firefox"
 export READER="zathura"
+export XDG_CONFIG_HOME="$HOME/.config"
