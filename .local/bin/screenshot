@@ -10,5 +10,10 @@ else
     flameshot gui -p "$IMG_NAME"
 fi
 
-xclip -selection clipboard -t image/png < "$IMG_NAME"
-echo -n "$IMG_NAME" | xclip
+if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
+    wl-copy < "$IMG_NAME"
+    wl-copy -p "$IMG_NAME"
+else
+    xclip -selection clipboard -t image/png < "$IMG_NAME"
+    echo -n "$IMG_NAME" | xclip
+fi
