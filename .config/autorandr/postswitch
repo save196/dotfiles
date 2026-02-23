@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Make sure screen locker is active
+xss-lock -- slock & disown
+slock-dbus --suspend-time -1 &
+
 # If autorandr detects new displays connected it falls back to the 'default' profile
 if [ "$AUTORANDR_CURRENT_PROFILE" = "default" ]; then
     # Get the list of displays in the default profile
@@ -19,10 +23,10 @@ if [ "$AUTORANDR_CURRENT_PROFILE" = "default" ]; then
         first_new_display=$(head -n1 <<< "$new_displays")
         first_default=$(head -n1 <<< "$default")
         # Set the output of the first new display at the right of first_default display
-        xrandr --output "$first_new_display" --auto --right-of "$first_default"
+        /usr/bin/xrandr --output "$first_new_display" --auto --right-of "$first_default"
         # Set all the other new displays to mirror first_new_display
         for monitor in $(echo "$new_displays" | grep -vw "^$first_new_display$"); do
-            xrandr --output "$monitor" --auto --same-as "$first_new_display"
+            /usr/bin/xrandr --output "$monitor" --auto --same-as "$first_new_display"
         done
     fi
 fi
