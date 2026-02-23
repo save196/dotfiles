@@ -1,15 +1,31 @@
-#!/bin/sh
+#!/bin/bash
 
+# Get Ethernet status
 ethicon=$(cat /sys/class/net/e*/operstate 2>/dev/null | sed "s/down//;s/up//")
 
-if [ -d /sys/class/net/wl* ]; then
-    [ "$(cat /sys/class/net/wl*/operstate)" = 'down' ] && wifiicon="󰖪"
+# Initialize Wi-Fi icon
+wifiicon=""
 
-    [ -z "${wifiicon}" ] && interface=$(iw dev | awk '$1=="Interface"{print $2}') && \
-        wifiicon=$(grep "^\s*w" /proc/net/wireless | awk '{ print int($3 * 100 / 70) "%" }') && \
-        ssid=$(iw dev "$interface" link | grep "SSID" | awk '{ print "", $2 $3 }') && wifiicon=$ssid' '$wifiicon
+# Check for Wi-Fi interfaces
+wifi_interfaces=$(iw dev | awk '$1=="Interface"{print $2}' | grep -v 'p2p')
 
-    printf "%s" "$wifiicon"
-    [ -n "$ethicon" ] && printf " "
+if [[ -n "$wifi_interfaces" ]]; then
+    # Find the first active Wi-Fi interface
+    for iface in $wifi_interfaces; do
+        if [[ -f "/sys/class/net/$iface/operstate" && "$(cat /sys/class/net/$iface/operstate)" == 'up' && $(ip addr show "$iface") =~ inet ]]; then
+            # Get signal strength and SSID
+            signal_strength=$(grep "$iface" /proc/net/wireless | awk '{ print int($3 * 100 / 70) "%" }')
+            ssid=$(iw dev "$iface" link | awk '/SSID/ {print "", $2}')
+            wifiicon="$ssid $signal_strength"
+            break
+        fi
+    done
+
+    # If no active connection, set to Wi-Fi disconnected icon
+    [[ -z "$wifiicon" ]] && wifiicon="󰖪"
 fi
+
+# Print Wi-Fi and Ethernet status
+printf "%s" "$wifiicon"
+[[ -n "$ethicon" && -n "$wifiicon" ]] && printf " "
 echo "$ethicon"
