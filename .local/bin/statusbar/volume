@@ -1,14 +1,19 @@
 #!/bin/bash
-
 vol=$(get-volume)
-bticon=$(pactl info | grep -q 'Default Sink: bluez' && echo " ")
+[[ -z "$vol" ]] && exit 1
 
-if [ $vol -gt 70 ]; then
-	icon=" "
-elif [ $vol -lt 30 ]; then
-	icon=" "
+bticon=$(wpctl inspect @DEFAULT_AUDIO_SINK@ | grep -q 'node.name = "bluez' && echo " ")
+
+if [ "$vol" -gt 70 ]; then
+  icon=" "
+elif [ "$vol" -lt 30 ]; then
+  icon=" "
 else
-	icon=" "
+  icon=" "
 fi
-pactl get-sink-mute @DEFAULT_SINK@ | grep yes > /dev/null && icon="❗"
+
+if wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -q '\[MUTED\]'; then
+  icon="❗"
+fi
+
 echo "$icon$vol%$bticon"

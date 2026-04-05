@@ -1,2 +1,2 @@
 #!/bin/bash
-pactl get-sink-volume @DEFAULT_SINK@ | grep -oE "[0-9]+%" | head -n1 | tr -d '%'
+wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '{printf "%.0f\n", $2 * 100}'

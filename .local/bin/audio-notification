@@ -2,22 +2,23 @@
 
 VOLUME=$(get-volume)
 
-if [ "$1" == "inc" ] && [ $VOLUME -ne 100 ]; then
-    if [ $(($VOLUME+10)) -gt 100 ]; then
-        pactl set-sink-volume @DEFAULT_SINK@ 100%
+if [ "$1" = "inc" ] && [ "$VOLUME" -ne 100 ]; then
+    if [ $((VOLUME + 10)) -gt 100 ]; then
+        wpctl set-volume @DEFAULT_AUDIO_SINK@ 1.0
     else
-        pactl set-sink-volume @DEFAULT_SINK@ +10%
+        wpctl set-volume @DEFAULT_AUDIO_SINK@ 10%+
     fi
-elif [ "$1" == "dec" ]; then
-    pactl set-sink-volume @DEFAULT_SINK@ -10%
-elif [ "$1" == "tog" ]; then
-    pactl set-sink-mute @DEFAULT_SINK@ toggle
-elif [ "$1" == "mic-tog" ]; then
-    pactl set-source-mute @DEFAULT_SOURCE@ toggle
+elif [ "$1" = "dec" ]; then
+    wpctl set-volume @DEFAULT_AUDIO_SINK@ 10%-
+elif [ "$1" = "tog" ]; then
+    wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+elif [ "$1" = "mic-tog" ]; then
+    wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
 fi
 
 VOLUME=$(get-volume)
-if [ "$1" == "inc" ] || [ "$1" == "dec" ]; then
+
+if [ "$1" = "inc" ] || [ "$1" = "dec" ]; then
     notify-send " Volume" "$VOLUME/100" -t 4000 -r 1 &
 fi
 
