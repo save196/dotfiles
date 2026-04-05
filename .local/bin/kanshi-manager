@@ -1,0 +1,276 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+
+
+def run_wlr_randr_json():
+    if shutil.which("wlr-randr") is None:
+        print("command 'wlr-randr' not found!", file=sys.stderr)
+        sys.exit(1)
+    p = subprocess.run(
+        ["wlr-randr", "--json"], check=True, capture_output=True, text=True
+    )
+    return json.loads(p.stdout)
+
+
+def current_mode(modes):
+    for m in modes or []:
+        if m.get("current"):
+            return m
+    return None
+
+
+def format_kanshi_block(lines):
+    out = []
+    indent = 0
+    for line in lines:
+        if "}" in line:
+            indent -= 1
+        out.append((" " * (indent * 2)) + line)
+        if "{" in line:
+            indent += 1
+    return "\n".join(out) + "\n"
+
+
+def generate_profile(profile_name: str) -> str:
+    data = run_wlr_randr_json()
+    lines = [f"profile {profile_name} {{"]
+
+    for r in data:
+        name = r.get("name", "")
+        make = r.get("make") or "Unknown"
+        model = r.get("model") or "Unknown"
+        serial = r.get("serial") or "Unknown"
+        enabled = bool(r.get("enabled", False))
+
+        output_id = f"{make} {model} {serial}"
+        lines.append(f'output "{output_id}" {{')
+        lines.append(f"# alias: {name}")
+
+        if not enabled:
+            lines.append("disable")
+            lines.append("}")
+            continue
+
+        lines.append("enable")
+        pos = r.get("position") or {}
+        x, y = pos.get("x", 0), pos.get("y", 0)
+        lines.append(f"position {x},{y}")
+
+        m = current_mode(r.get("modes"))
+        if m:
+            w, h = m.get("width", 0), m.get("height", 0)
+            lines.append(f"mode     {w}x{h}")
+
+        transform = r.get("transform", "normal")
+        if transform != "normal":
+            lines.append(f"transform {transform}")
+
+        scale = r.get("scale", 1.0)
+        if float(scale) != 1.0:
+            lines.append(f"scale {scale}")
+
+        lines.append("}")
+
+    lines.append("}")
+    return format_kanshi_block(lines)
+
+
+def kanshi_config_path():
+    return os.path.expanduser("~/.config/kanshi/config")
+
+
+def list_profiles_from_config(path: str) -> list[str]:
+    if not os.path.exists(path):
+        return []
+    rx = re.compile(r'^\s*profile\s+("([^"]+)"|([^\s{]+))\s*\{')
+    names = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            m = rx.match(line)
+            if m:
+                names.append(m.group(2) or m.group(3))
+    return names
+
+
+def get_current_profile() -> str | None:
+    if shutil.which("kanshictl") is None:
+        return None
+    try:
+        p = subprocess.run(
+            ["kanshictl", "status"], check=True, capture_output=True, text=True
+        )
+    except subprocess.CalledProcessError:
+        return None
+    m = re.search(r"^\s*Current profile:\s*(.+?)\s*$", p.stdout, re.MULTILINE)
+    return m.group(1) if m else None
+
+
+def save_profile_to_config(profile_text: str, path: str):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "a", encoding="utf-8") as f:
+        if os.path.getsize(path) > 0 and not profile_text.startswith("\n"):
+            f.write("\n")
+        f.write(profile_text)
+
+
+def remove_profile_from_config(path: str, profile_name: str) -> bool:
+    if not os.path.exists(path):
+        return False
+
+    with open(path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    start_rx = re.compile(
+        r'^\s*profile\s+(?:"(?P<qname>[^"]+)"|(?P<name>[^\s{]+))\s*\{\s*$'
+    )
+
+    out = []
+    removed = False
+    skipping = False
+    depth = 0
+
+    for line in lines:
+        if not skipping:
+            m = start_rx.match(line)
+            if m and (
+                m.group("qname") == profile_name or m.group("name") == profile_name
+            ):
+                skipping = True
+                removed = True
+                depth = line.count("{") - line.count("}")
+                continue
+            out.append(line)
+        else:
+            depth += line.count("{") - line.count("}")
+            if depth <= 0:
+                skipping = False
+                depth = 0
+
+    if removed:
+        with open(path, "w", encoding="utf-8") as f:
+            f.writelines(out)
+
+    return removed
+
+
+def extract_output_ids_from_profile_text(profile_text: str) -> set[str]:
+    # output "ID" {
+    rx = re.compile(r'^\s*output\s+"([^"]+)"\s*\{', re.MULTILINE)
+    return set(rx.findall(profile_text))
+
+
+def config_has_profile_with_exact_outputs(
+    path: str, output_ids: set[str]
+) -> str | None:
+    """
+    Returns the existing profile name if a profile exists whose set of output IDs
+    exactly matches `output_ids`. Otherwise None.
+    """
+    if not os.path.exists(path):
+        return None
+
+    with open(path, "r", encoding="utf-8") as f:
+        text = f.read()
+
+    # Find each profile block and collect its output IDs.
+    # This is a simple brace-depth parser for top-level `profile ... { ... }`.
+    start_rx = re.compile(
+        r'^\s*profile\s+(?:"([^"]+)"|([^\s{]+))\s*\{\s*$', re.MULTILINE
+    )
+
+    pos = 0
+    while True:
+        m = start_rx.search(text, pos)
+        if not m:
+            break
+        name = m.group(1) or m.group(2)
+        i = m.end()
+        depth = 1
+        while i < len(text) and depth > 0:
+            if text[i] == "{":
+                depth += 1
+            elif text[i] == "}":
+                depth -= 1
+            i += 1
+        block = text[m.start() : i]
+        ids = extract_output_ids_from_profile_text(block)
+        if ids == output_ids:
+            return name
+        pos = i
+
+    return None
+
+
+def kanshi_reload():
+    if shutil.which("kanshictl") is None:
+        print("warning: kanshictl not found; cannot reload", file=sys.stderr)
+        return
+    subprocess.run(["kanshictl", "reload"], check=False)
+
+
+def main():
+    ap = argparse.ArgumentParser(
+        description="Generate/manage kanshi profiles from current monitor configuration"
+    )
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    sub.add_parser("list", help="List profiles in ~/.config/kanshi/config")
+
+    p_save = sub.add_parser(
+        "save", help="Generate current layout as a profile and append to config"
+    )
+    p_save.add_argument("name", help="Profile name to save")
+    p_save.add_argument(
+        "--force",
+        action="store_true",
+        help="If a profile with identical outputs exists, remove it and save anyway",
+    )
+
+    p_rm = sub.add_parser("remove", help="Remove a profile from config")
+    p_rm.add_argument("name", help="Profile name to remove")
+
+    args = ap.parse_args()
+    cfg = kanshi_config_path()
+
+    if args.cmd == "list":
+        current = get_current_profile()
+        for name in list_profiles_from_config(cfg):
+            suffix = " (current)" if current and name == current else ""
+            print(f"{name}{suffix}")
+        return
+
+    if args.cmd == "remove":
+        if remove_profile_from_config(cfg, args.name):
+            print(f"Removed profile: {args.name}")
+            kanshi_reload()
+            return
+        print(f"Profile not found: {args.name}", file=sys.stderr)
+        sys.exit(1)
+
+    if args.cmd == "save":
+        profile_text = generate_profile(args.name)
+        new_output_ids = extract_output_ids_from_profile_text(profile_text)
+        existing = config_has_profile_with_exact_outputs(cfg, new_output_ids)
+        if existing is not None and existing != args.name:
+            if not args.force:
+                print(
+                    f"Error: profile '{existing}' already has the same outputs: "
+                    + ", ".join(sorted(new_output_ids)),
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            remove_profile_from_config(cfg, existing)
+
+        save_profile_to_config(profile_text, cfg)
+        kanshi_reload()
+        return
+
+
+if __name__ == "__main__":
+    main()
