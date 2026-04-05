@@ -1,0 +1,278 @@
+#!/usr/bin/env python3
+import uuid
+import subprocess
+import argparse
+import signal
+import atexit
+
+from jeepney import MessageType, HeaderFields, new_method_return, new_error
+from jeepney.bus_messages import message_bus
+from jeepney.io.blocking import open_dbus_connection
+
+SERVER_NAME = "org.freedesktop.ScreenSaver"
+
+
+class ScreenSaverService:
+    def __init__(self, verbose=False):
+        # cookie -> (sender_unique_name, application_name, reason)
+        self.inhibitions = {}
+        self.suspend_time = 60  # in minutes
+        self.blank_time = 300  # in seconds
+        self.lock_cmd = ""
+        self.lock_enabled = True
+        self._swayidle_proc = None
+        self.verbose = verbose
+
+    def _log(self, msg):
+        if self.verbose:
+            print(msg, flush=True)
+
+    def _start_swayidle(self):
+        if self._swayidle_proc and self._swayidle_proc.poll() is None:
+            return
+
+        lock_cmd = self.lock_cmd if self.lock_enabled else "/bin/true"
+
+        cmd = [
+            "swayidle",
+            "-w",
+            "timeout",
+            str(self.blank_time),
+            'wlopm --off "*"',
+            "resume",
+            'wlopm --on "*"',
+            "timeout",
+            str(self.blank_time + 5),
+            lock_cmd,
+            "timeout",
+            str(self.suspend_time * 60),
+            "systemctl suspend",
+            "before-sleep",
+            lock_cmd,
+        ]
+        self._swayidle_proc = subprocess.Popen(cmd)
+        self._log(f"[swayidle] started pid={self._swayidle_proc.pid}")
+
+    def _stop_swayidle(self):
+        p = self._swayidle_proc
+        self._swayidle_proc = None
+        if not p or p.poll() is not None:
+            return
+
+        self._log(f"[swayidle] stopping pid={p.pid}")
+        try:
+            p.terminate()
+            p.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            self._log(f"[swayidle] terminate timed out; killing pid={p.pid}")
+            p.kill()
+            p.wait(timeout=3)
+
+    def shutdown(self):
+        self._stop_swayidle()
+
+    def inhibit(self, sender, application_name, reason_for_inhibit):
+        cookie = int(uuid.uuid4()) & 0xFFFFFFFF
+        self.inhibitions[cookie] = (sender, application_name, reason_for_inhibit)
+        self._log(
+            f"[inhibit] + cookie={cookie} sender={sender} app={application_name!r} reason={reason_for_inhibit!r}"
+        )
+        if len(self.inhibitions) == 1:
+            self._stop_swayidle()
+        return cookie
+
+    def uninhibit(self, cookie):
+        entry = self.inhibitions.pop(cookie, None)
+        if entry:
+            sender, app, reason = entry
+            self._log(
+                f"[inhibit] - cookie={cookie} sender={sender} app={app!r} reason={reason!r}"
+            )
+            if not self.inhibitions:
+                self._start_swayidle()
+
+    def drop_inhibitions_for_sender(self, sender):
+        to_drop = [c for c, (s, _, _) in self.inhibitions.items() if s == sender]
+        if not to_drop:
+            return
+        for c in to_drop:
+            s, app, reason = self.inhibitions.pop(c, (None, None, None))
+            self._log(
+                f"[inhibit] - (sender vanished) cookie={c} sender={s} app={app!r} reason={reason!r}"
+            )
+        if not self.inhibitions:
+            self._start_swayidle()
+
+    def apply_config(
+        self, suspend_time=None, blank_time=None, lock_cmd=None, lock_enabled=None
+    ):
+        changed = False
+
+        if (
+            suspend_time is not None
+            and suspend_time > 0
+            and suspend_time != self.suspend_time
+        ):
+            self.suspend_time = suspend_time
+            changed = True
+
+        if blank_time is not None and blank_time > 0 and blank_time != self.blank_time:
+            self.blank_time = blank_time
+            changed = True
+
+        if lock_cmd is not None and lock_cmd != self.lock_cmd:
+            self.lock_cmd = lock_cmd
+            changed = True
+
+        if lock_enabled is not None and lock_enabled != self.lock_enabled:
+            self.lock_enabled = lock_enabled
+            changed = True
+
+        if changed and not self.inhibitions:
+            self._stop_swayidle()
+            self._start_swayidle()
+
+
+def add_name_owner_changed_match(connection):
+    connection.send_and_get_reply(
+        message_bus.AddMatch(
+            "type='signal',sender='org.freedesktop.DBus',"
+            "interface='org.freedesktop.DBus',member='NameOwnerChanged'"
+        )
+    )
+
+
+def _cfg_get(cfg, key, expected_sig):
+    """Return variant value or None if key missing. Raise ValueError on wrong type."""
+    if key not in cfg:
+        return None
+    v = cfg[key]
+
+    # Jeepney variants are usually ("sig", value)
+    if not (isinstance(v, tuple) and len(v) == 2 and isinstance(v[0], str)):
+        raise ValueError(
+            f"{key}: expected Variant tuple (sig, value), got {type(v).__name__}: {v!r}"
+        )
+
+    sig, val = v
+    if sig != expected_sig:
+        raise ValueError(f"{key}: expected variant '{expected_sig}', got '{sig}'")
+    return val
+
+
+def _handle_setconfig(service, msg, connection):
+    try:
+        (cfg,) = msg.body
+        if not isinstance(cfg, dict):
+            raise ValueError(
+                f"SetConfig expects a{{sv}} dict, got {type(cfg).__name__}"
+            )
+
+        suspend_time = _cfg_get(cfg, "SuspendTime", "u")
+        blank_time = _cfg_get(cfg, "BlankTime", "u")
+        lock_enabled = _cfg_get(cfg, "LockEnabled", "b")
+
+        service.apply_config(
+            suspend_time=suspend_time,
+            blank_time=blank_time,
+            lock_enabled=lock_enabled,
+        )
+        rep = new_method_return(msg, "", ())
+    except Exception:
+        rep = new_error(
+            msg,
+            f"{SERVER_NAME}.Error.InvalidArgs",
+            "s",
+            ("Invalid arguments",),
+        )
+
+    connection.send_message(rep)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Custom Screen Saver Service")
+    parser.add_argument(
+        "--suspend-time", type=int, help="Time in minutes before suspend"
+    )
+    parser.add_argument(
+        "--blank-time", type=int, help="Time in seconds before screen blanking"
+    )
+    parser.add_argument(
+        "--lock-cmd",
+        required=True,
+        help='Lock command to run (e.g. "swaylock -f -c 000000")',
+    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
+    args = parser.parse_args()
+
+    service = ScreenSaverService(verbose=args.verbose)
+
+    atexit.register(service.shutdown)
+
+    def _handle_signal(signum, frame):
+        service.shutdown()
+        raise SystemExit(0)
+
+    signal.signal(signal.SIGINT, _handle_signal)
+    signal.signal(signal.SIGTERM, _handle_signal)
+
+    with open_dbus_connection() as connection:
+        name_reply = connection.send_and_get_reply(message_bus.RequestName(SERVER_NAME))
+        if name_reply.body[0] != 1:
+            return
+
+        add_name_owner_changed_match(connection)
+
+        service.apply_config(args.suspend_time, args.blank_time, args.lock_cmd)
+
+        while True:
+            msg = connection.receive()
+
+            mtype = msg.header.message_type
+            iface = msg.header.fields.get(HeaderFields.interface)
+            member = msg.header.fields.get(HeaderFields.member)
+
+            if mtype == MessageType.signal:
+                if iface == "org.freedesktop.DBus" and member == "NameOwnerChanged":
+                    name, old_owner, new_owner = msg.body
+                    if name.startswith(":") and old_owner and new_owner == "":
+                        service.drop_inhibitions_for_sender(name)
+                continue
+
+            if mtype != MessageType.method_call:
+                continue
+
+            if iface == "org.freedesktop.DBus.Properties" and member == "GetAll":
+                (requested_iface,) = msg.body
+                if requested_iface in (SERVER_NAME, "org.freedesktop.ScreenSaver"):
+                    props = {
+                        "Inhibited": ("b", bool(service.inhibitions)),
+                        "SuspendTime": ("u", int(service.suspend_time)),
+                    }
+                else:
+                    props = {}
+                rep = new_method_return(msg, "a{sv}", (props,))
+                connection.send_message(rep)
+                continue
+
+            sender = msg.header.fields.get(HeaderFields.sender)
+
+            if member == "Inhibit":
+                app, reason = msg.body
+                cookie = service.inhibit(sender, app, reason)
+                rep = new_method_return(msg, "u", (cookie,))
+            elif member == "UnInhibit":
+                (cookie,) = msg.body
+                service.uninhibit(cookie)
+                rep = new_method_return(msg, "", ())
+            elif member == "SetConfig":
+                _handle_setconfig(service, msg, connection)
+                continue
+            else:
+                rep = new_error(msg, SERVER_NAME + ".Error.NoMethod")
+
+            connection.send_message(rep)
+
+
+if __name__ == "__main__":
+    main()
