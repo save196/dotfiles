@@ -2,7 +2,7 @@
 
 setxkbmap -option ctrl:nocaps
 
-picom --vsync -b
+picom --backend glx --vsync -b
 pgrep udiskie || udiskie -qAT --no-appindicator &
 xset r rate 300 50 &
 keepassxc &
@@ -12,3 +12,6 @@ autorandr -c
 pgrep -f slock-dbus || slock-dbus &
 pgrep dwmblocks || dwmblocks &
 /usr/bin/nextcloud --background &
+
+# Update volume on statusbar
+pkill -RTMIN+10 dwmblocks
