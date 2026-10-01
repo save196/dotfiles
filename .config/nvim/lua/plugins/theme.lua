@@ -4,11 +4,14 @@ local colorscheme = {}
 local gruvbox = {
   "ellisonleao/gruvbox.nvim",
   priority = 1000,
+  version = false,
   config = function()
+    require('gruvbox').setup({
+      transparent_mode = true,
+      overrides = { TabLineFill = { bg = 'NONE' } },
+    })
     vim.cmd.colorscheme('gruvbox')
-    vim.cmd.highlight({ "StatusLine", "cterm=NONE", "gui=NONE" })
-    vim.api.nvim_set_hl(0, 'Normal', { ctermbg = 'NONE', bg = 'NONE' })
-    vim.api.nvim_set_hl(0, 'SignColumn', { bg = 'NONE' })
+    vim.api.nvim_set_hl(0, 'DiffText', { bg = '#675425' })
     vim.api.nvim_set_hl(0, 'DiagnosticSignError', { link = 'GruvboxRed' })
     vim.api.nvim_set_hl(0, 'DiagnosticSignWarn', { link = 'GruvboxYellow' })
     vim.api.nvim_set_hl(0, 'DiagnosticSignInfo', { link = 'GruvboxBlue' })
@@ -41,33 +44,57 @@ local hackthebox = {
   end
 }
 
+
 -- Colorscheme config
+local lualine_theme = 'auto'
 if vim.g.colors_name == 'gruvbox' then
-  vim.g.airline_theme = 'base16_gruvbox_dark_hard'
+  lualine_theme = 'gruvbox-material'
   colorscheme = gruvbox
 elseif vim.g.colors_name == 'hackthebox' then
-  vim.g.airline_theme = 'onedark'
   colorscheme = hackthebox
 end
 
--- Airline config
-vim.g.airline_powerline_fonts = 1
-vim.g['airline#extensions#tabline#enabled'] = 1
-vim.g['airline#extensions#tabline#buffer_nr_show'] = 1
-vim.g['airline#extensions#tabline#formatter'] = 'unique_tail'
-
 return {
   {
-    "norcalli/nvim-colorizer.lua",
+    'catgoose/nvim-colorizer.lua',
+    event = "BufReadPre",
+    opts = {},
+  },
+  {
+    'akinsho/bufferline.nvim',
+    version = "*",
+    dependencies = 'nvim-tree/nvim-web-devicons',
     config = function()
-      require("colorizer").setup()
+      require('bufferline').setup {
+        options = {
+          numbers = "buffer_id",
+          buffer_close_icon = '✕',
+          separator_style = "slope",
+          tab_size = 0,
+        },
+        highlights = function(defaults)
+          local sel = vim.api.nvim_get_hl(0, { name = 'CursorLine' }).bg
+          local out = {}
+          for name in pairs(defaults.highlights) do
+            out[name] = { bg = name:match('_selected$') and sel or 'NONE' }
+            if name:match('separator') then out[name].fg = vim.g.terminal_color_0 end
+          end
+          out.buffer_selected.fg = vim.api.nvim_get_hl(0, { name = 'TabLineSel' }).fg
+          return out
+        end,
+      }
     end
   },
   {
-    "vim-airline/vim-airline",
-    dependencies = {
-      'vim-airline/vim-airline-themes'
-    },
+    'nvim-lualine/lualine.nvim',
+    dependencies = 'nvim-tree/nvim-web-devicons',
+    config = function()
+      require('lualine').setup {
+        options = {
+          theme = lualine_theme,
+        },
+      }
+    end
   },
   colorscheme,
 }
