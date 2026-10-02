@@ -12,6 +12,8 @@ local gruvbox = {
     })
     vim.cmd.colorscheme('gruvbox')
     vim.api.nvim_set_hl(0, 'DiffText', { bg = '#675425' })
+    vim.api.nvim_set_hl(0, 'BlinkCmpMenu', { link = 'NormalFloat' })
+    vim.api.nvim_set_hl(0, 'BlinkCmpMenuBorder', { link = 'NormalFloat' })
     vim.api.nvim_set_hl(0, 'DiagnosticSignError', { link = 'GruvboxRed' })
     vim.api.nvim_set_hl(0, 'DiagnosticSignWarn', { link = 'GruvboxYellow' })
     vim.api.nvim_set_hl(0, 'DiagnosticSignInfo', { link = 'GruvboxBlue' })
@@ -47,10 +49,10 @@ local hackthebox = {
 
 -- Colorscheme config
 local lualine_theme = 'auto'
-if vim.g.colors_name == 'gruvbox' then
+if vim.g.theme == 'gruvbox' then
   lualine_theme = 'gruvbox-material'
   colorscheme = gruvbox
-elseif vim.g.colors_name == 'hackthebox' then
+elseif vim.g.theme == 'hackthebox' then
   colorscheme = hackthebox
 end
 

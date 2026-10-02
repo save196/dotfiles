@@ -1,5 +1,5 @@
 return {
-  { "windwp/nvim-autopairs",   event = "InsertEnter", config = true },
+  { "windwp/nvim-autopairs",                   event = "InsertEnter", config = true },
   { "nvim-treesitter/nvim-treesitter-context", config = true },
   "eandrju/cellular-automaton.nvim",
   "tpope/vim-fugitive",

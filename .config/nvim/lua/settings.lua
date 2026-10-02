@@ -10,6 +10,7 @@ set.laststatus = 3
 set.cursorline = true
 set.scrolloff = 5
 set.updatetime = 1000
+set.winborder = 'single'
 
 -- Line number
 set.number = true
@@ -39,5 +40,8 @@ set.splitbelow = true
 set.list = true
 set.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 
+-- Open diagnostic float on ']d' and '[d'
+vim.diagnostic.config({ jump = { float = true } })
+
 -- Colorscheme (available: 'gruvbox' and 'hackthebox')
-vim.g.colors_name = 'gruvbox'
+vim.g.theme = 'gruvbox'

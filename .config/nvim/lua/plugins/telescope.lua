@@ -1,8 +1,7 @@
 return {
   {
     'nvim-telescope/telescope-fzf-native.nvim',
-    build =
-    'cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release && cmake --install build --prefix build'
+    build = 'make'
   },
   {
     'nvim-telescope/telescope.nvim',
@@ -50,7 +49,7 @@ return {
           local bufopts = { buffer = e.buf }
           vim.keymap.set('n', 'gd', builtin.lsp_definitions, bufopts)
           vim.keymap.set('n', 'gi', builtin.lsp_implementations, bufopts)
-          vim.keymap.set('n', 'gr', builtin.lsp_references, bufopts)
+          vim.keymap.set('n', 'grr', builtin.lsp_references, bufopts)
         end
       })
     end
