@@ -15,7 +15,10 @@ else
     # Fetch active sessions' names (excluding temp sessions)
     active_sessions=$(tmux ls 2>/dev/null | cut -f1 -d: | grep -Ev "^session_[0-9]+$")
     # Find all potential sessions
-    sessions=$(find "${search_dirs[@]}" -mindepth 1 -maxdepth 1 -type d 2>/dev/null; pwd)
+    sessions=$(
+        find "${search_dirs[@]}" -mindepth 1 -maxdepth 1 -type d 2>/dev/null
+        pwd
+    )
     sessions=$(echo "$sessions" | sort -u)
     # Remove active sessions from potential sessions list
     for session in $active_sessions; do
@@ -30,18 +33,22 @@ if [[ -z $selected ]]; then
     exit 0
 fi
 
+if [[ -d $selected ]]; then
+    selected=$(realpath "$selected")
+fi
+
 # Extract session name from selected directory
 session_name=$(basename "$selected" | tr . _)
 
 # Create a new session if it doesn't exist
-if ! tmux has-session -t "$session_name" 2>/dev/null; then
+if ! tmux has-session -t "=$session_name" 2>/dev/null; then
     fscrypt unlock "$selected" 2>/dev/null
     tmux new-session -d -s "$session_name" -c "$selected"
 fi
 
 # Switch or attach to the selected session
-if [ -n "$TMUX" ]; then
-    tmux switch-client -t "$session_name"
+if [[ -n $TMUX ]]; then
+    tmux switch-client -t "=$session_name"
 else
-    tmux attach-session -t "$session_name"
+    tmux attach-session -t "=$session_name"
 fi
