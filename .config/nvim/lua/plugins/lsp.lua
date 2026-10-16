@@ -23,11 +23,6 @@ return {
 
     config = function()
       require('mason').setup()
-      require('blink.cmp').setup {
-        completion = { ghost_text = { enabled = true } },
-        sources = { default = { 'lsp', 'path', 'snippets', 'buffer' } },
-        signature = { enabled = true },
-      }
 
       vim.lsp.config('lua_ls', { settings = { Lua = { diagnostics = { globals = { 'vim' } } } } })
       vim.lsp.config('pyright', {
