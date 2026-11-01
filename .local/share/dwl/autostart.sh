@@ -9,6 +9,7 @@ pkill -f swayidle-dbus; swayidle-dbus --lock-cmd "swaylock -f -c 000000" &
 pkill swaybg; swaybg -i ~/Pictures/landscape_81.jpg -m fill &
 pkill kanshy; kanshi &
 /usr/bin/nextcloud --background &
+/usr/bin/keepassxc --minimized &
 /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
 
 # Update volume on statusbar
