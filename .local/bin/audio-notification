@@ -19,7 +19,7 @@ fi
 VOLUME=$(get-volume)
 
 if [ "$1" = "inc" ] || [ "$1" = "dec" ]; then
-    notify-send " Volume" "$VOLUME/100" -t 4000 -r 1 &
+    notify-send " Volume" "$VOLUME/100" -t 4000 -h string:x-canonical-private-synchronous:osd &
 fi
 
 pkill -RTMIN+10 dw.blocks

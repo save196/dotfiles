@@ -5,7 +5,7 @@
 # Define the directories to list
 search_dirs=(
     "$HOME/Documents/projects"
-    "$HOME/Documents/htb"
+    "$HOME/Projects"
 )
 
 # Interactive session selection

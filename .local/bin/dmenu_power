@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
     OUT=$(printf "Suspend\\nShutdown\\nReboot\\nHibernate" | wmenu -i -l 4)
 else
@@ -14,7 +13,7 @@ elif [ "$OUT" == "Reboot" ]; then
 elif [ "$OUT" == "Suspend" ]; then
     if grep 1 /sys/class/power_supply/AC/online >/dev/null; then
         if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
-            swaylock -f -c 000000; wlopm --off "*"; swayidle -w timeout 1 '' resume 'wlopm --on "*"; kill ${PPID}' before-sleep ''
+            wayidle lock
         else
             xset dpms force off
         fi

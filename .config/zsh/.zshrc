@@ -68,7 +68,7 @@ ZSH_THEME="agnoster"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git docker ansible compleat)
+plugins=(fzf zsh-syntax-highlighting)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -102,7 +102,6 @@ alias cal="ncal -wby"
 alias b64d-cp="base64 -d <(xclip -o -sel c)"
 alias tor-reload="sudo systemctl reload tor@default.service"
 alias fzf-edit="fzf --bind 'enter:become(nvim {})'"
-zathura() { tabbed -c zathura $* -e }
 
 venv() {
     [ ! -d "$HOME/.local/share/python" ] && mkdir -p "$HOME/.local/share/python/"
@@ -147,7 +146,11 @@ fi
 
 source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh 2>/dev/null
 prompt_context(){}
-export LESSOPEN="| /usr/share/source-highlight/src-hilite-lesspipe.sh %s"
+if [ -x /usr/bin/src-hilite-lesspipe.sh ]; then
+    export LESSOPEN="| /usr/bin/src-hilite-lesspipe.sh %s"
+else
+    export LESSOPEN="| /usr/share/source-highlight/src-hilite-lesspipe.sh %s"
+fi
 export LESS=' -R '
 
 if [ -f "$ZDOTDIR/.extra" ]; then

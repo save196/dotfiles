@@ -1,0 +1,337 @@
+#!/usr/bin/env python3
+"""Idle and lock manager for wlroots compositors.
+
+Owns org.freedesktop.ScreenSaver on the session bus, runs swayidle, and turns
+D-Bus inhibit requests into a logind idle inhibitor, which swayidle honours.
+
+    wayidle daemon --lock-cmd "swaylock -f -c 000000"
+    wayidle lock                      # lock and blank now
+    wayidle config                    # show the settings
+    wayidle config --no-lock --blank-time 600 --suspend-time 30
+"""
+
+import argparse
+import itertools
+import signal
+import subprocess
+import sys
+
+from jeepney import (
+    DBusAddress,
+    HeaderFields,
+    MessageType,
+    new_error,
+    new_method_call,
+    new_method_return,
+)
+from jeepney.bus_messages import message_bus
+from jeepney.io.blocking import open_dbus_connection
+
+NAME = "org.freedesktop.ScreenSaver"
+SELF = DBusAddress("/org/freedesktop/ScreenSaver", bus_name=NAME, interface=NAME)
+LOGIND = DBusAddress(
+    "/org/freedesktop/login1",
+    bus_name="org.freedesktop.login1",
+    interface="org.freedesktop.login1.Manager",
+)
+
+BLANK = 'wlopm --off "*"'
+UNBLANK = 'wlopm --on "*"'
+SUSPEND = "playerctl status -a | grep -q Playing || systemctl suspend"
+LOCK_DELAY = 5  # seconds between blanking and locking
+
+# Every setting and its D-Bus type. Times of 0 mean "never".
+TYPES = {"LockEnabled": "b", "BlankTime": "u", "SuspendTime": "u"}
+
+STORE = {
+    "LockEnabled": ("org.gnome.desktop.screensaver", "lock-enabled"),
+    "BlankTime": ("org.gnome.desktop.session", "idle-delay"),  # seconds
+}
+STORE_CHANGED = (
+    "type='signal',interface='ca.desrt.dconf.Writer',member='Notify',"
+    "arg0path='/org/gnome/desktop/'"
+)
+
+
+def gsettings(*args):
+    result = subprocess.run(
+        ["gsettings", *args], capture_output=True, text=True, check=False
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"gsettings {' '.join(args)}: {result.stderr.strip()}")
+    return result.stdout
+
+
+def read_setting(name):
+    value = gsettings("get", *STORE[name]).split()[-1]  # 'uint32 300' -> '300'
+    return value == "true" if TYPES[name] == "b" else int(value)
+
+
+def write_setting(name, value):
+    gsettings("set", *STORE[name], str(value).lower())  # True -> 'true'
+
+
+class Service:
+    def __init__(self, lock_cmd, suspend_time, verbose):
+        self.lock_cmd = lock_cmd  # must return once the screen is locked
+        self.verbose = verbose
+
+        self.suspend_time = suspend_time  # minutes, not persistent
+        self.blank_time = None  # seconds, from the store
+        self.lock_enabled = None  # from the store
+        self.load_settings()
+        self.applied = None  # the settings swayidle is running with
+
+        self.inhibitions = {}  # cookie -> sender
+        self.cookies = itertools.count(1)
+        self.logind = open_dbus_connection(bus="SYSTEM", enable_fds=True)
+        self.inhibit_fd = None
+
+        self.swayidle = None
+        self.waker = None
+
+    def log(self, *msg):
+        if self.verbose:
+            print(*msg, flush=True)
+
+    def settings(self):
+        return {
+            "LockEnabled": self.lock_enabled,
+            "BlankTime": self.blank_time,
+            "SuspendTime": self.suspend_time,
+        }
+
+    def load_settings(self):
+        self.lock_enabled, self.blank_time = (
+            read_setting("LockEnabled"),
+            read_setting("BlankTime"),
+        )
+
+    def configure(self, cfg):
+        for key, (sig, _value) in cfg.items():
+            if TYPES.get(key) != sig:
+                raise ValueError(f"bad setting {key}")
+        for key, (_sig, value) in cfg.items():
+            if key in STORE:
+                write_setting(key, value)
+            else:
+                self.suspend_time = value
+        self.reload()
+
+    def reload(self):
+        """Pick up the settings, and restart swayidle if they changed."""
+        try:
+            self.load_settings()
+        except (RuntimeError, ValueError) as e:
+            self.log("keeping the old settings:", e)
+            return
+        if self.settings() == self.applied:
+            return
+        self.stop()
+        # The old swayidle can't run its resume command anymore.
+        subprocess.run(UNBLANK, shell=True, check=False)
+        self.start()
+
+    def start(self):
+        cmd = ["swayidle", "-w"]
+        if self.suspend_time:
+            cmd += ["timeout", str(self.suspend_time * 60), SUSPEND]
+        if self.blank_time:
+            cmd += ["timeout", str(self.blank_time), BLANK, "resume", UNBLANK]
+        if self.lock_enabled and self.blank_time:
+            lock_time = self.blank_time + LOCK_DELAY
+            cmd += ["timeout", str(lock_time), self.lock_cmd]
+        # Always pass before-sleep: since 1.9 swayidle only talks to logind,
+        # and so only honours our inhibitor, when it has such a hook.
+        cmd += ["before-sleep", self.lock_cmd if self.lock_enabled else ":"]
+        self.swayidle = subprocess.Popen(cmd)
+        self.applied = self.settings()
+        self.log("swayidle started, pid", self.swayidle.pid, self.applied)
+
+    def stop(self):
+        for proc in (self.swayidle, self.waker):
+            if proc is None or proc.poll() is not None:
+                continue
+            proc.terminate()
+            try:
+                proc.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait()
+
+    def inhibit(self, sender, app, reason):
+        cookie = next(self.cookies)
+        self.inhibitions[cookie] = sender
+        self.log(f"inhibit + {cookie} {sender} {app!r} {reason!r}")
+        self.sync_inhibitor()
+        return cookie
+
+    def uninhibit(self, cookie):
+        if self.inhibitions.pop(cookie, None):
+            self.log(f"inhibit - {cookie}")
+            self.sync_inhibitor()
+
+    def drop_sender(self, sender):
+        gone = [c for c, s in self.inhibitions.items() if s == sender]
+        for cookie in gone:
+            self.uninhibit(cookie)
+
+    def sync_inhibitor(self):
+        """Hold one logind idle inhibitor while anybody inhibits us."""
+        if self.inhibitions and self.inhibit_fd is None:
+            reply = self.logind.send_and_get_reply(
+                new_method_call(
+                    LOGIND,
+                    "Inhibit",
+                    "ssss",
+                    ("idle", "wayidle", "D-Bus ScreenSaver inhibit", "block"),
+                )
+            )
+            if reply.header.message_type == MessageType.error:
+                raise RuntimeError(f"logind refused the inhibitor: {reply.body}")
+            self.inhibit_fd = reply.body[0]
+        elif not self.inhibitions and self.inhibit_fd is not None:
+            self.inhibit_fd.close()  # closing the fd releases the inhibitor
+            self.inhibit_fd = None
+
+    def lock(self):
+        """Lock now, and blank the outputs until the next input."""
+        if self.lock_enabled:
+            subprocess.run(self.lock_cmd, shell=True, check=False)
+
+        # While inhibited swayidle never reports idle nor resume, so nothing
+        # would turn the outputs back on. Leave them alone.
+        if self.inhibitions:
+            return
+        if self.waker and self.waker.poll() is None:
+            return  # already blanked
+
+        subprocess.run(BLANK, shell=True, check=False)
+        # A throwaway swayidle: idle after 1s, and on the first input it
+        # unblanks and kills itself ($PPID is swayidle, thanks to -w).
+        self.waker = subprocess.Popen(
+            ["swayidle", "-w", "timeout", "1", ":", "resume", UNBLANK + "; kill $PPID"]
+        )
+
+
+def handle(service, msg):
+    """Process one incoming message; return the reply to send, if any."""
+    kind = msg.header.message_type
+    member = msg.header.fields.get(HeaderFields.member)
+    sender = msg.header.fields.get(HeaderFields.sender)
+
+    if kind == MessageType.signal:
+        if member == "NameOwnerChanged":
+            name, _old, new = msg.body
+            if not new:
+                service.drop_sender(name)
+        elif member == "NameLost" and msg.body[0] == NAME:
+            sys.exit(0)  # replaced by a newer instance
+        elif member == "Notify":  # the settings store changed
+            service.reload()
+        return None
+    if kind != MessageType.method_call:
+        return None
+
+    # The object path is not checked on purpose: clients use both
+    # /ScreenSaver and /org/freedesktop/ScreenSaver.
+    try:
+        if member == "Inhibit":
+            app, reason = msg.body
+            cookie = service.inhibit(sender, app, reason)
+            return new_method_return(msg, "u", (cookie,))
+        if member == "UnInhibit":
+            service.uninhibit(msg.body[0])
+            return new_method_return(msg)
+        if member == "Lock":
+            service.lock()
+            return new_method_return(msg)
+        if member == "SetConfig":
+            service.configure(msg.body[0])
+            return new_method_return(msg)
+        if member in ("GetConfig", "GetAll"):
+            props = {k: (TYPES[k], v) for k, v in service.settings().items()}
+            props["Inhibited"] = ("b", bool(service.inhibitions))
+            return new_method_return(msg, "a{sv}", (props,))
+    except Exception as e:
+        return new_error(msg, NAME + ".Error.Failed", "s", (str(e),))
+    return new_error(msg, "org.freedesktop.DBus.Error.UnknownMethod")
+
+
+def daemon(args):
+    service = Service(args.lock_cmd, args.suspend_time, args.verbose)
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+
+    with open_dbus_connection() as bus:
+        # 7 = allow replacement | replace existing | don't queue:
+        # a newly started daemon takes over from an old one.
+        if bus.send_and_get_reply(message_bus.RequestName(NAME, 7)).body[0] != 1:
+            sys.exit(f"{NAME} is already owned")
+        bus.send_and_get_reply(
+            message_bus.AddMatch(
+                "type='signal',sender='org.freedesktop.DBus',"
+                "interface='org.freedesktop.DBus',member='NameOwnerChanged'"
+            )
+        )
+        bus.send_and_get_reply(message_bus.AddMatch(STORE_CHANGED))
+
+        service.start()
+        try:
+            while True:
+                reply = handle(service, bus.receive())
+                if reply is not None:
+                    bus.send_message(reply)
+        except KeyboardInterrupt:
+            pass
+        finally:
+            service.stop()
+
+
+def call(member, signature=None, body=()):
+    """Client side: call a method on the running daemon, return the reply body."""
+    with open_dbus_connection() as bus:
+        reply = bus.send_and_get_reply(new_method_call(SELF, member, signature, body))
+    if reply.header.message_type == MessageType.error:
+        sys.exit(f"{member} failed: {reply.body}")
+    return reply.body
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Idle and lock manager")
+    sub = parser.add_subparsers(dest="cmd", required=True)
+
+    p = sub.add_parser("daemon", help="run the service")
+    p.add_argument("--lock-cmd", required=True, help='e.g. "swaylock -f -c 000000"')
+    p.add_argument("--suspend-time", type=int, default=60, help="minutes, 0 = never")
+    p.add_argument("-v", "--verbose", action="store_true")
+
+    sub.add_parser("lock", help="lock and blank now")
+
+    p = sub.add_parser("config", help="show the settings, or change them")
+    p.add_argument("--lock", action=argparse.BooleanOptionalAction)
+    p.add_argument("--blank-time", type=int, help="seconds, 0 = never")
+    p.add_argument("--suspend-time", type=int, help="minutes, 0 = never")
+
+    args = parser.parse_args()
+
+    if args.cmd == "daemon":
+        daemon(args)
+    elif args.cmd == "lock":
+        call("Lock")
+    else:
+        cfg = {}
+        if args.lock is not None:
+            cfg["LockEnabled"] = ("b", args.lock)
+        if args.blank_time is not None:
+            cfg["BlankTime"] = ("u", args.blank_time)
+        if args.suspend_time is not None:
+            cfg["SuspendTime"] = ("u", args.suspend_time)
+        if cfg:
+            call("SetConfig", "a{sv}", (cfg,))
+        else:
+            for name, (_sig, value) in call("GetConfig")[0].items():
+                print(f"{name}: {value}")
+
+
+if __name__ == "__main__":
+    main()

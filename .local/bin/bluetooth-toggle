@@ -4,4 +4,4 @@ BT_STATUS='on'
 
 rfkill list | grep hci0 && rfkill block bluetooth && BT_STATUS='off' || rfkill unblock bluetooth
 
-notify-send " Bluetooth $BT_STATUS" -t 4000 -r 1 &
+notify-send " Bluetooth $BT_STATUS" -t 4000 -h string:x-canonical-private-synchronous:osd &
