@@ -1,8 +1,9 @@
 !! Transparency (0-1):
 *.alpha: 0.81
+Xcursor.size: 32
 
 !! Set a default font and font size as below:
-*.font: monospace:pixelsize=15:antialias=true:autohint=true
+*.font: monospace:size=9:antialias=true:autohint=true
 
 *.antialias: 1
 

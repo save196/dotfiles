@@ -6,6 +6,8 @@ else
     OUT=$(printf "Suspend\\nShutdown\\nReboot\\nHibernate" | dmenu -i -l 4)
 fi
 
+sleep 0.2
+
 if [ "$OUT" == "Shutdown" ]; then
     systemctl poweroff
 elif [ "$OUT" == "Reboot" ]; then

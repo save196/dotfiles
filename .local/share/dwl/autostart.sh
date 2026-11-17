@@ -24,12 +24,13 @@ pkill kanshi
 run kanshi
 run /usr/bin/nextcloud --background
 run /usr/bin/keepassxc --minimized
-if [ -x /usr/lib/mate-polkit/polkit-mate-authentication-agent-1 ]; then
-	run /usr/lib/mate-polkit/polkit-mate-authentication-agent-1
-else
+if [ -d /usr/libexec ]; then
 	run /usr/libexec/polkit-mate-authentication-agent-1
+	run /usr/libexec/geoclue-2.0/demos/agent
+else
+	run /usr/lib/mate-polkit/polkit-mate-authentication-agent-1
+	run /usr/lib/geoclue-2.0/demos/agent
 fi
-run /usr/lib/geoclue-2.0/demos/agent
 
 # Update volume on statusbar
 pkill -RTMIN+10 dwlblocks

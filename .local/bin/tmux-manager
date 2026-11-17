@@ -25,7 +25,8 @@ else
         sessions=$(echo "$sessions" | grep -v "/$session$")
     done
     # Prompt for selection using fzf
-    selected=$(printf "%s\n%s" "$active_sessions" "$sessions" | sed '/^$/d' | fzf)
+    selected=$(printf "%s\n%s" "$active_sessions" "$sessions" | sed "/^$/d; s|^$HOME$|~/|; s|^$HOME|~|" | fzf)
+    selected=${selected/#\~/$HOME}
 fi
 
 # Exit if no session is selected
@@ -33,8 +34,11 @@ if [[ -z $selected ]]; then
     exit 0
 fi
 
+# Resolve directories to an absolute path
+start_dir=$PWD
 if [[ -d $selected ]]; then
     selected=$(realpath "$selected")
+    start_dir=$selected
 fi
 
 # Extract session name from selected directory
@@ -42,8 +46,8 @@ session_name=$(basename "$selected" | tr . _)
 
 # Create a new session if it doesn't exist
 if ! tmux has-session -t "=$session_name" 2>/dev/null; then
-    fscrypt unlock "$selected" 2>/dev/null
-    tmux new-session -d -s "$session_name" -c "$selected"
+    [[ -d $selected ]] && fscrypt unlock "$selected" 2>/dev/null
+    tmux new-session -d -s "$session_name" -c "$start_dir"
 fi
 
 # Switch or attach to the selected session

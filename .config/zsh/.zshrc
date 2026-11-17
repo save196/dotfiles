@@ -98,7 +98,11 @@ source $ZSH/oh-my-zsh.sh
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias vim="nvim"
 alias feh="feh --scale-down"
-alias cal="ncal -wby"
+if command -v gcal >/dev/null; then
+    alias cal="gcal -q FI -H '\e[7m:\e[0m:\e[32m:\e[0m' -K --iso-week-number=yes"
+else
+    alias cal="cal -m -w"
+fi
 alias b64d-cp="base64 -d <(xclip -o -sel c)"
 alias tor-reload="sudo systemctl reload tor@default.service"
 alias fzf-edit="fzf --bind 'enter:become(nvim {})'"

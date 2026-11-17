@@ -1,38 +1,49 @@
 #!/usr/bin/env python3
-import uuid
-import time
+import argparse
 import subprocess
-from jeepney import MessageType, HeaderFields, new_method_return, new_error
+import time
+import uuid
+
+from jeepney import HeaderFields, MatchRule, MessageType, new_error, new_method_return
 from jeepney.bus_messages import message_bus
 from jeepney.io.blocking import open_dbus_connection
-import argparse
 
 SERVER_NAME = "org.freedesktop.ScreenSaver"
 
 
 class ScreenSaverService:
     def __init__(self):
-        self.inhibitions = {}
+        self.inhibitions = {}  # cookie -> sender
 
-    def inhibit(self, application_name, reason_for_inhibit):
+    def inhibit(self, sender):
         cookie = int(uuid.uuid4()) & 0xFFFFFFFF
-        self.inhibitions[cookie] = (application_name, reason_for_inhibit)
+        self.inhibitions[cookie] = sender
         if len(self.inhibitions) == 1:
-            subprocess.run(["xset", "s", "off", "-dpms"])
-            subprocess.run(["xautolock", "-disable"])
+            subprocess.run(["xset", "s", "off", "-dpms"], check=False)
+            subprocess.run(["xautolock", "-disable"], check=False)
         return cookie
 
     def uninhibit(self, cookie):
         if cookie in self.inhibitions:
             self.inhibitions.pop(cookie)
-            if not self.inhibitions:
-                subprocess.run(["xset", "s", "on", "+dpms"])
-                subprocess.run(["xautolock", "-enable"])
+            self.release_if_idle()
+
+    def drop_sender(self, sender):
+        dead = [c for c, s in self.inhibitions.items() if s == sender]
+        for cookie in dead:
+            self.inhibitions.pop(cookie)
+        if dead:
+            self.release_if_idle()
+
+    def release_if_idle(self):
+        if not self.inhibitions:
+            subprocess.run(["xset", "s", "on", "+dpms"], check=False)
+            subprocess.run(["xautolock", "-enable"], check=False)
 
     def update_xautolock(self, suspend_time):
         if not suspend_time or suspend_time < 1:
             suspend_time = 60
-        subprocess.run(["xautolock", "-exit"])
+        subprocess.run(["xautolock", "-exit"], check=False)
         time.sleep(1)
         subprocess.Popen(
             ["xautolock", "-time", str(suspend_time), "-locker", "systemctl suspend"]
@@ -54,20 +65,37 @@ def main():
                 service.update_xautolock(args.suspend_time)
             return
 
-        # Start xss-lock in the background
+        connection.send_and_get_reply(
+            message_bus.AddMatch(
+                MatchRule(
+                    type="signal",
+                    sender="org.freedesktop.DBus",
+                    interface="org.freedesktop.DBus",
+                    member="NameOwnerChanged",
+                    path="/org/freedesktop/DBus",
+                )
+            )
+        )
+
         subprocess.Popen(["xss-lock", "--", "slock"])
         service.update_xautolock(args.suspend_time)
 
         while True:
             msg = connection.receive()
+            fields = msg.header.fields
+            method = fields.get(HeaderFields.member)
+            if msg.header.message_type == MessageType.signal:
+                if method == "NameOwnerChanged" and not msg.body[2]:
+                    service.drop_sender(msg.body[0])
+                continue
             if msg.header.message_type != MessageType.method_call:
                 continue
-            method = msg.header.fields[HeaderFields.member]
             if method == "Inhibit":
-                cookie = service.inhibit(*msg.body)
+                cookie = service.inhibit(fields.get(HeaderFields.sender))
                 rep = new_method_return(msg, "u", (cookie,))
             elif method == "UnInhibit":
-                service.uninhibit(*msg.body)
+                if msg.body:
+                    service.uninhibit(msg.body[0])
                 rep = new_method_return(msg, "", ())
             else:
                 rep = new_error(msg, SERVER_NAME + ".Error.NoMethod")
