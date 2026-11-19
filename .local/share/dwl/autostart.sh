@@ -22,8 +22,8 @@ pkill swaybg
 run swaybg -i ~/Pictures/landscape_81.jpg -m fill
 pkill kanshi
 run kanshi
-run /usr/bin/nextcloud --background
-run /usr/bin/keepassxc --minimized
+run nextcloud --background
+run keepassxc --minimized
 if [ -d /usr/libexec ]; then
 	run /usr/libexec/polkit-mate-authentication-agent-1
 	run /usr/libexec/geoclue-2.0/demos/agent
