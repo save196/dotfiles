@@ -31,6 +31,10 @@ else
 	run /usr/lib/mate-polkit/polkit-mate-authentication-agent-1
 	run /usr/lib/geoclue-2.0/demos/agent
 fi
+if ! systemctl --user cat gammastep.service >/dev/null 2>&1; then
+	pkill gammastep
+	run gammastep
+fi
 
 # Update volume on statusbar
 pkill -RTMIN+10 dwlblocks
