@@ -14,4 +14,4 @@ BRIGHTNESS=$(
     esac | grep -oP '[0-9]+(?=%)'
 )
 
-notify-send " Backlight" "$BRIGHTNESS/100" -t 4000 -h string:x-canonical-private-synchronous:osd &
+notify-send " Backlight: $BRIGHTNESS%" -t 4000 -a "backlight-notification" -h string:x-canonical-private-synchronous:backlight -h int:value:"$BRIGHTNESS" &

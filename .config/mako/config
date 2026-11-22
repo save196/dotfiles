@@ -1,9 +1,36 @@
-font=Monospace 13
-background-color=#262626
+font=Monospace 12
+background-color=#262626EE
+padding=10
 border-color=#005ce6
+border-radius=4
+progress-color=over #1364aeBB
 default-timeout=10000
+layer=overlay
 
 [urgency=critical]
-background-color=#900000
+background-color=#900000DD
 border-color=#ff0000
 default-timeout=0
+
+[mode=do-not-disturb]
+invisible=1
+
+[app-name=audio-notification]
+font=Monospace 10
+margin=5
+outer-margin=20
+padding=3
+text-alignment=center
+anchor=bottom-center
+invisible=0
+border-radius=14
+
+[app-name=backlight-notification]
+font=Monospace 10
+margin=5
+outer-margin=20
+padding=3
+text-alignment=center
+anchor=bottom-center
+invisible=0
+border-radius=14
