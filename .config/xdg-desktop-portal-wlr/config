@@ -1,0 +1,7 @@
+[screencast]
+output_name=
+max_fps=30
+exec_before=
+exec_after=
+chooser_type=dmenu
+chooser_cmd=wmenu -p 'Select a source to share:' -l 10
