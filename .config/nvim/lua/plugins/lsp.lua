@@ -11,6 +11,7 @@ return {
         version = '*',
         opts = {
           completion = {
+            menu = { auto_show = function() return vim.bo.filetype ~= 'vimwiki' end },
             ghost_text = { enabled = true },
           },
           sources = {
