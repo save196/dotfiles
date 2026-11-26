@@ -208,10 +208,7 @@ def config_has_profile_with_exact_outputs(
 
 
 def kanshi_reload():
-    if shutil.which("kanshictl") is None:
-        print("warning: kanshictl not found; cannot reload", file=sys.stderr)
-        return
-    subprocess.run(["kanshictl", "reload"], check=False)
+    subprocess.run(["pkill", "-HUP", "-x", "kanshi"], check=False)
 
 
 def main():
@@ -267,6 +264,7 @@ def main():
                 sys.exit(1)
             remove_profile_from_config(cfg, existing)
 
+        remove_profile_from_config(cfg, args.name)
         save_profile_to_config(profile_text, cfg)
         kanshi_reload()
         return
